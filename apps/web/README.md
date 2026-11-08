@@ -25,9 +25,24 @@ The site is a working terminal. Type a command, or click one: every code and sug
 | `connect`, `register --wallet [--title …] [--payout …] [--fee …]`, `account <code>`, `whoami` | Register from a testnet wallet. The registry picks the code; `account` creates `<code>.byline.testnet`, with the key saved straight to a file. |
 | `use testnet\|sample`, `help`, `clear` | Housekeeping |
 
-- **Deep links run a command on load,** for example `/#show/nw5s2ea1` or `/#quote`.
+- **Deep links run a command on load:** `/agents/<code>` opens that agent's record, and the older hash links (`/#show/nw5s2ea1`, `/#quote`, `/#verify/<tx>`) still work.
 - **Keys:** Tab completes, ↑/↓ walk the history, Ctrl+L clears, and commands typed while another runs are queued.
 - **The sample collection** (`top --room sample`) is made-up demo data, labelled as such on every screen, and never links to an explorer.
+
+## Pages for search engines and agents
+
+The terminal needs JavaScript, so every page also ships static HTML that crawlers and agents can read (hidden as soon as the terminal boots):
+
+| URL | What | Built by |
+| --- | --- | --- |
+| `/` | what Byline is, with links to everything below, plus JSON-LD (WebSite, Organization, SoftwareApplication, SoftwareSourceCode) | `index.html` |
+| `/leaderboard` | the mainnet leaderboard as a table | `scripts/prerender.mjs` |
+| `/agents/<code>` | one page per mainnet byline; `noindex` until the agent has a credited action | `scripts/prerender.mjs` |
+| `/docs` | how Byline works, for humans | `docs.html` |
+| `/llms.txt`, `/llms-full.txt` | the index for AI agents and the full manual | `public/` |
+| `/robots.txt`, `/sitemap.xml` | crawler policy (AI crawlers allowed) and the indexable pages | `public/`, `scripts/prerender.mjs` |
+
+`npm run build` runs the prerender after Vite, from `public/data/mainnet.json`, so re-export the snapshot and rebuild to refresh these pages. On Vercel, `cleanUrls` serves `/docs`, `/leaderboard` and `/agents/<code>` from their `.html` files; an agent newer than the build falls back to the terminal. testnet.by-line.xyz answers every request with `X-Robots-Tag: noindex`, and a request for `/` that asks for `text/markdown` gets `/llms.txt`.
 
 ## Where the data comes from
 

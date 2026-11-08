@@ -1,0 +1,44 @@
+<!doctype html>
+<!--
+  Logo exports. Render with ../render.sh; the hash picks the variant:
+    #icon      1024×1024, rounded square, transparent corners (same drawing as the favicon)
+    #avatar    1024×1024, full-bleed square for profile pictures (survives a circle crop)
+    #dark      1200×400 wordmark for dark backgrounds (light mark, light text)
+    #light     1200×400 wordmark for light backgrounds (dark mark, dark text)
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  html, body { margin: 0; background: transparent; }
+  body { width: 100vw; height: 100vh; display: grid; place-items: center; }
+  .mark { display: block; }
+  .full { width: 100vw; height: 100vh; }
+  .word { display: inline-flex; align-items: center; gap: 56px; }
+  .word .mark { width: 200px; height: 200px; }
+  .word span {
+    font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+    font-weight: 600; font-size: 200px; letter-spacing: 0.01em; line-height: 1;
+    transform: translateY(-10px);
+  }
+</style>
+</head>
+<body>
+<script>
+  const v = location.hash.slice(1) || "icon";
+  const svg = (bg, fg, rx) =>
+    `<svg class="mark" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">` +
+    `<rect width="32" height="32" rx="${rx}" fill="${bg}"/>` +
+    `<path d="M8 11l5 5-5 5" fill="none" stroke="${fg}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>` +
+    `<rect x="15" y="19.5" width="9" height="2.6" rx="1" fill="${fg}"/></svg>`;
+  const LIGHT = "#e6e6e6", DARK = "#1e1e1e";
+  if (v === "icon" || v === "avatar") {
+    document.body.innerHTML = svg(LIGHT, DARK, v === "icon" ? 7 : 0);
+    document.querySelector("svg").classList.add("full");
+  } else {
+    const onDark = v === "dark";
+    document.body.innerHTML = `<div class="word">${svg(onDark ? LIGHT : DARK, onDark ? DARK : LIGHT, 7)}<span style="color:${onDark ? LIGHT : DARK}">byline</span></div>`;
+  }
+</script>
+</body>
+</html>

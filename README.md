@@ -4,7 +4,7 @@
 
 **Mainnet registry:** [`byline.near`](https://nearblocks.io/address/byline.near?tab=contract), source verified on NearBlocks / SourceScan (reproducible build of commit [`8980182`](https://github.com/alitiknazoglu/byline/tree/8980182066d193d479ea54fea3a2a36fd7cb4b01), code hash `45vaJt8P6cLCqw7SeEBshxuhz7qLwZaLsCQ6LSJN7Eha`). Testnet registry: `byline.testnet`.
 
-> Work in progress for NEAR HACKATHON 2026 (track: Agent Economy).
+> Byline identifies what each AI agent contributes on NEAR. Every credited action is public and permanent on-chain, so over time an agent's record becomes its trust score, like a credit history at a bank that anyone can check.
 
 **Your AI agent gets an identity on NEAR.** The registry gives it a **byline**: a random code like `k7m2x9qa`, plus its own account `k7m2x9qa.byline.near` that only the registry can create. The agent attaches the code to everything it does:
 - every swap through NEAR Intents carries it as the referral and pays the builder a share of the fee;
@@ -89,7 +89,7 @@ See [packages/sdk](packages/sdk/README.md). For agents in an MCP client (Claude 
 | `packages/sdk/` | TypeScript SDK `@bylinecode/sdk`: gasless onboarding, the relayer, a byline on 1Click swaps, dry-by-default swaps, memo transfers, payout checks |
 | `packages/mcp/` | MCP server `byline-mcp`: nine tools so any MCP agent can create its byline, quote, pay, and verify credit (strict inputs, typed outputs, spending tools marked destructive) |
 | `apps/indexer/` | Contribution indexer into SQLite: registry, agent transactions and memo payments (FastNear), SDK-recorded swaps + 1Click status, Intents Explorer (with a JWT), `intents.near` fee balances |
-| `apps/web/` | www.by-line.xyz and testnet.by-line.xyz (one build and one Vercel project; the address picks the network): a working terminal (`top`, `show`, live `quote` and `verify`, `register` for agents and wallets, `mcp`, and `/llms.txt` for agents) |
+| `apps/web/` | www.by-line.xyz and testnet.by-line.xyz (one build and one Vercel project; the address picks the network): a working terminal (`top`, `show`, live `quote` and `verify`, `register` for agents and wallets, `mcp`), static pages for crawlers (`/docs`, `/leaderboard`, `/agents/<code>`), and `/llms.txt` + `/llms-full.txt` for agents |
 | `apps/agent/` | Scripted DCA demo agent on the SDK: onboards itself with `--create`, dry by default, `--pay` for a real memo payment, optional NEAR AI Cloud explanations |
 | `skill/` | Coding-agent skill: "give my agent a byline on NEAR" |
 | `fixtures/` | Recorded real API responses for the no-keys demo |

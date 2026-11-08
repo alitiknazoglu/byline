@@ -304,3 +304,22 @@ b { font-weight: 700; color: var(--hi); }
 .tr.skip .mark { color: var(--dim); }
 .tr.fail { color: var(--err); }
 .tr.ok .mark { color: var(--hi); }
+
+/* The static page in index.html and the prerendered pages: what crawlers and agents without JavaScript read.
+   Hidden as soon as JavaScript runs (index.html adds .js); React then replaces it with the terminal. */
+.js .static { display: none; }
+.static { max-width: 78ch; margin: 0 auto; padding: 28px 20px 64px; }
+.static h1 { margin: 10px 0 14px; font-size: 20px; color: var(--hi); }
+.static h2 { margin: 26px 0 8px; font-size: 15px; color: var(--hi); }
+.static p, .static li { color: var(--fg); }
+.static ul { padding-left: 2ch; }
+.static a { color: var(--fg); }
+.static code { color: var(--hi); }
+.static table { border-collapse: collapse; }
+.static th, .static td { padding: 3px 14px 3px 0; text-align: left; }
+.static th { color: var(--dim); font-weight: 400; }
+.static-brand a { color: var(--hi); font-weight: 700; text-decoration: none; }
+.static-note { color: var(--dim); }
+
+/* The tagline is the page's h1, set in the same type as the line around it. */
+.tagline { display: inline; margin: 0; font: inherit; font-weight: 700; color: inherit; }

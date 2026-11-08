@@ -3,7 +3,28 @@
   "installCommand": "cd ../.. && npm ci",
   "buildCommand": "cd ../.. && npm run build -w @bylinecode/sdk -w @bylinecode/indexer && npm run build -w @bylinecode/web",
   "outputDirectory": "dist",
+  "cleanUrls": true,
+  "routes": [
+    {
+      "src": "^/$",
+      "has": [{ "type": "header", "key": "accept", "value": { "re": "text/markdown" } }],
+      "dest": "/llms.txt",
+      "headers": { "Vary": "Accept" }
+    }
+  ],
+  "rewrites": [
+    { "source": "/agents/:code", "destination": "/" }
+  ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "has": [{ "type": "host", "value": "testnet.by-line.xyz" }],
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+    },
+    {
+      "source": "/",
+      "headers": [{ "key": "Vary", "value": "Accept" }]
+    },
     {
       "source": "/data/(.*)",
       "headers": [

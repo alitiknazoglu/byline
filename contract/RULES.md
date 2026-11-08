@@ -118,6 +118,6 @@ The registry contract lives at `byline.near` (mainnet) and `byline.testnet` (tes
 ## 13. Deployment and trust
 
 - **Initialise in the deploy transaction.** `new(owner_id)` is private (only the registry account can call it), and the deploy and the `new` call go in one batch, so nobody can front-run the init.
-- **Whoever holds the registry account's full-access key can redeploy the contract,** and so change anything. During the hackathon that is the Byline team. Afterwards the account should be locked (full-access key removed) or moved to a multisig.
+- **Whoever holds the registry account's full-access key can redeploy the contract,** and so change anything. Today that is the Byline team. Later the account should be locked (full-access key removed) or moved to a multisig.
 - **There is no reset.** The v1 → v2 move on testnet used a one-off `reset` that has since been removed from the code.
 - **Verified source:** mainnet builds use `cargo near build reproducible-wasm` (NEP-330 metadata, pinned SourceScan image), so NearBlocks can rebuild and verify the deployed code.

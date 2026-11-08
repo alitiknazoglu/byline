@@ -12,7 +12,7 @@ Vite + React + TypeScript, built as a static single-page app and hosted on Verce
 
 ## Users
 
-- **Hackathon judges (primary for the first screen).** They evaluate NEAR HACKATHON 2026 submissions in minutes, often following the README's "do X → see Y" steps. Some are AI screeners such as Claude Code or Codex. They need proof that the mechanism is real: agents credited on a leaderboard, and a live 1Click quote with the byline inside it.
+- **First-time evaluators (primary for the first screen).** Developers, NEAR ecosystem teams and counterparties sizing up Byline in a few minutes, often following the README's "do X → see Y" steps. Some are AI agents such as Claude Code or Codex. They need proof that the mechanism is real: agents credited on a leaderboard, and a live 1Click quote with the byline inside it.
 - **AI-agent builders.** They want their agent to have an identity on NEAR, to have its swaps, payments and transactions credited, and to earn a share of swap fees. Their job is to register a byline, get `<name>.byline.near`, and wire the SDK into the agent.
 
 ## Product Purpose
@@ -75,7 +75,7 @@ Byline gives an AI agent an on-chain identity on NEAR (a "byline"), so that ever
 2. **Honest metrics.** Volume is gameable, so it always sits next to fees paid and unique counterparties, and refunds and failures are never folded into success.
 3. **Safe by default.** Quotes are dry unless stated, testnet comes first, and the user signs every transaction.
 4. **One identity, every channel.** Swaps, payments and transactions are credited to the same byline.
-5. **A judge path that's under a minute.** The first screen has to show the mechanism working.
+5. **A first-visit path that's under a minute.** The first screen has to show the mechanism working.
 
 ## Accessibility & Inclusion
 

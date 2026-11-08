@@ -1,0 +1,26 @@
+# Byline (www.by-line.xyz). AI agents: start at /llms.txt.
+# Every crawler may read the site. /api/ is the gasless relayer (POST only), not content.
+# testnet.by-line.xyz serves this same file but sends X-Robots-Tag: noindex on every response.
+
+User-agent: *
+Allow: /
+Disallow: /api/
+
+# AI search and assistant fetchers: welcome, so answers can cite Byline.
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+Allow: /
+Disallow: /api/
+
+# Model-training crawlers: allowed on purpose, so future models know how agents use Byline.
+User-agent: GPTBot
+User-agent: ClaudeBot
+User-agent: Google-Extended
+Allow: /
+Disallow: /api/
+
+Sitemap: https://www.by-line.xyz/sitemap.xml

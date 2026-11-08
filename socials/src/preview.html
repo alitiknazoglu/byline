@@ -1,0 +1,89 @@
+<!doctype html>
+<!--
+  Website preview image (Open Graph / X card), 1200×630. Render with ../render.sh.
+  Same look as by-line.xyz: a plain terminal window, graphite ground, white text, no accent colour.
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  @font-face {
+    font-family: "JetBrains Mono";
+    src: url("fonts/jetbrains-mono-latin-wght-normal.woff2") format("woff2");
+    font-weight: 100 800;
+  }
+  :root {
+    --bg: #1e1e1e; --bar: #2c2c2c; --edge: #0f0f0f; --rule: #2f2f2f;
+    --fg: #e6e6e6; --hi: #ffffff; --dim: #8f8f8f;
+    --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+  }
+  html, body { margin: 0; }
+  body {
+    width: 1200px; height: 630px; overflow: hidden;
+    background: var(--bg); color: var(--fg);
+    font-family: var(--mono); font-variant-ligatures: none;
+    -webkit-font-smoothing: antialiased;
+    display: flex; flex-direction: column;
+  }
+  .bar {
+    position: relative; height: 64px; flex: none;
+    display: flex; align-items: center; padding: 0 28px;
+    background: var(--bar); border-bottom: 1.5px solid var(--edge);
+  }
+  .close { width: 20px; height: 20px; border-radius: 50%; background: #ff5f57; box-shadow: inset 0 0 0 1px rgba(0,0,0,.35); }
+  .brand {
+    position: absolute; left: 50%; transform: translateX(-50%);
+    display: inline-flex; align-items: center; gap: 12px;
+    font-family: var(--sans); font-weight: 600; font-size: 26px; letter-spacing: 0.01em;
+  }
+  .brand svg { width: 28px; height: 28px; }
+  .bar .url { margin-left: auto; font-family: var(--sans); font-size: 20px; color: var(--dim); }
+
+  main { flex: 1; padding: 50px 72px 0; }
+  .banner { margin: 0 0 30px; font-size: 25px; line-height: 1.12; color: var(--fg); }
+  h1 { margin: 0 0 18px; font-size: 52px; font-weight: 700; line-height: 1.15; color: var(--hi); letter-spacing: -0.01em; }
+  .sub { margin: 0; font-size: 27px; line-height: 1.45; color: var(--dim); max-width: 1000px; }
+  .prompt { margin-top: 34px; font-size: 27px; color: var(--hi); }
+  .prompt .ps { color: var(--dim); margin-right: 1ch; }
+  .cursor { display: inline-block; width: 0.6em; height: 1.1em; background: var(--fg); vertical-align: -0.2em; margin-left: 0.15em; }
+
+  .status {
+    flex: none; display: flex; height: 46px; align-items: center;
+    background: var(--bar); border-top: 1.5px solid var(--rule);
+    font-size: 19px; color: var(--dim); white-space: nowrap;
+  }
+  .seg { padding: 0 22px; border-right: 1.5px solid var(--rule); line-height: 46px; }
+  .seg.right { margin-left: auto; border-right: 0; border-left: 1.5px solid var(--rule); }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <span class="close"></span>
+    <span class="brand">
+      <svg viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#e6e6e6"/><path d="M8 11l5 5-5 5" fill="none" stroke="#1e1e1e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="15" y="19.5" width="9" height="2.6" rx="1" fill="#1e1e1e"/></svg>
+      byline
+    </span>
+    <span class="url">by-line.xyz</span>
+  </header>
+
+  <main>
+<pre class="banner"> _           _ _
+| |__  _   _| (_)_ __   ___
+| '_ \| | | | | | '_ \ / _ \
+| |_) | |_| | | | | | |  __/
+|_.__/ \__, |_|_|_| |_|\___|
+       |___/</pre>
+    <h1>Every agent action, credited.</h1>
+    <p class="sub">Identity and track record for AI agents on NEAR: the start of a credit history for agents.</p>
+    <div class="prompt"><span class="ps">byline@mainnet $</span><span class="cursor"></span></div>
+  </main>
+
+  <footer class="status">
+    <span class="seg">NEAR mainnet</span>
+    <span class="seg">registry byline.near</span>
+    <span class="seg">swaps · payments · transactions</span>
+    <span class="seg right">ready</span>
+  </footer>
+</body>
+</html>

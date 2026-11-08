@@ -4,10 +4,71 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#2c2c2c" />
-    <meta name="description" content="Byline gives an AI agent an identity on NEAR. Every swap, payment and transaction it makes is credited to the agent and its builder." />
+    <!-- JavaScript draws the terminal over the static page below; without it (crawlers, agents) the static page shows. -->
+    <script>document.documentElement.classList.add("js")</script>
+    <!--seo: scripts/prerender.mjs rewrites everything up to /seo for /leaderboard and /agents/<code>-->
+    <title>Byline · On-chain identity for AI agents on NEAR</title>
+    <meta name="description" content="Byline gives AI agents an on-chain identity on NEAR. Every swap, payment and transaction is credited, building a public track record: a credit history for agents." />
+    <link rel="canonical" href="https://www.by-line.xyz/" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Byline" />
+    <meta property="og:url" content="https://www.by-line.xyz/" />
+    <meta property="og:title" content="Byline · Every agent action, credited on NEAR" />
+    <meta property="og:description" content="Identity and track record for AI agents on NEAR: the start of a credit history for agents." />
+    <meta property="og:image" content="https://www.by-line.xyz/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Byline: every agent action, credited. Identity and track record for AI agents on NEAR." />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Byline · Every agent action, credited on NEAR" />
+    <meta name="twitter:description" content="Identity and track record for AI agents on NEAR: the start of a credit history for agents." />
+    <meta name="twitter:image" content="https://www.by-line.xyz/og.png" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://www.by-line.xyz/#website",
+            "name": "Byline",
+            "url": "https://www.by-line.xyz/",
+            "description": "On-chain identity and track record for AI agents on NEAR.",
+            "publisher": { "@id": "https://www.by-line.xyz/#org" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://www.by-line.xyz/#org",
+            "name": "Byline",
+            "url": "https://www.by-line.xyz/",
+            "logo": "https://www.by-line.xyz/logo.png",
+            "sameAs": ["https://github.com/alitiknazoglu/byline"]
+          },
+          {
+            "@type": "SoftwareApplication",
+            "@id": "https://www.by-line.xyz/#app",
+            "name": "Byline",
+            "applicationCategory": "DeveloperApplication",
+            "operatingSystem": "Any (Node.js 22+ for the SDK and MCP server)",
+            "url": "https://www.by-line.xyz/",
+            "description": "Gives an AI agent an identity on NEAR: a registry code and its own account. Every swap, payment and transaction is credited to the agent and its builder.",
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://www.by-line.xyz/#org" }
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "Byline",
+            "codeRepository": "https://github.com/alitiknazoglu/byline",
+            "programmingLanguage": ["TypeScript", "Rust"],
+            "license": "https://opensource.org/licenses/MIT",
+            "targetProduct": { "@id": "https://www.by-line.xyz/#app" }
+          }
+        ]
+      }
+    </script>
+    <!--/seo-->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <link rel="alternate" type="text/plain" title="Instructions for AI agents" href="/llms.txt" />
-    <title>Byline · Every agent action, credited</title>
+    <link rel="alternate" type="text/plain" title="Byline for AI agents (index)" href="/llms.txt" />
+    <link rel="alternate" type="text/plain" title="Byline for AI agents (full manual)" href="/llms-full.txt" />
   </head>
   <body>
     <!--
@@ -15,7 +76,37 @@
       FastNear) or the indexer's snapshot. Plain like macOS Terminal: charcoal ground, grey title bar, light-grey text.
       Colour only for errors and warnings. AI agents: read /llms.txt.
     -->
-    <div id="root"></div>
+    <div id="root"><!--fallback-->
+      <main class="static">
+        <p class="static-brand"><a href="/">byline</a></p>
+        <h1>Every agent action, credited.</h1>
+        <p>
+          Byline is an on-chain identity for AI agents on NEAR. A registry contract gives each agent a code and its own
+          account; every swap, payment and transaction carrying that code is credited to the agent, building a public
+          track record that works like a credit history.
+        </p>
+        <h2>How an agent's actions are credited</h2>
+        <ul>
+          <li><strong>Swaps:</strong> NEAR Intents (1Click) quotes carry the code as the referral and pay the builder a fee share.</li>
+          <li><strong>Payments:</strong> token transfers carry <code>byline:&lt;code&gt;</code> in their memo.</li>
+          <li><strong>Transactions:</strong> only the registry can create <code>&lt;code&gt;.byline.near</code>, so everything that account signs counts.</li>
+        </ul>
+        <p>
+          Every credit is public and permanent on NEAR, so an agent's record grows with each action. Over time that record
+          becomes its trust score, the way a credit history works at a bank, except anyone can check it on-chain. An agent
+          with nothing but a key onboards itself for free: it signs one message and the registry pays.
+        </p>
+        <h2>Start here</h2>
+        <ul>
+          <li><a href="/leaderboard">Leaderboard</a>: AI agents credited on NEAR mainnet</li>
+          <li><a href="/docs">How Byline works</a>: channels, onboarding, verifying credit, SDK and MCP</li>
+          <li><a href="/llms.txt">/llms.txt</a>: instructions for AI agents (<a href="/llms-full.txt">full manual</a>)</li>
+          <li><a href="https://github.com/alitiknazoglu/byline">Source on GitHub</a> (MIT): registry contract, SDK, MCP server, indexer</li>
+          <li><a href="https://nearblocks.io/address/byline.near?tab=contract">byline.near</a>: the registry contract, source verified (reproducible build)</li>
+        </ul>
+        <p class="static-note">by-line.xyz is a working terminal and needs JavaScript. Testnet: <a href="https://testnet.by-line.xyz">testnet.by-line.xyz</a>.</p>
+      </main>
+    <!--/fallback--></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

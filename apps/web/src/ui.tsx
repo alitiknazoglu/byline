@@ -136,13 +136,25 @@ export function Ext({ href, children }: { href: string | null; children: ReactNo
   );
 }
 
-/** A byline code that opens its record when clicked. */
+/**
+ * A byline code that opens its record when clicked. A real link to /agents/<code>, so crawlers can follow it and
+ * a middle-click opens the agent's page; a plain click runs `show <code>` in place.
+ */
 export function CodeRef({ code }: { code: string }) {
   const { run } = useTerm();
   return (
-    <button type="button" className="cmdlink t-code" onClick={() => run(`show ${code}`)} title={`show ${code}`}>
+    <a
+      className="cmdlink t-code"
+      href={`/agents/${encodeURIComponent(code)}`}
+      onClick={(e) => {
+        if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return;
+        e.preventDefault();
+        run(`show ${code}`);
+      }}
+      title={`show ${code}`}
+    >
       {code}
-    </button>
+    </a>
   );
 }
 

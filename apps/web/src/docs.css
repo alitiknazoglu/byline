@@ -1,0 +1,59 @@
+/* /docs: a readable page in the terminal's palette (same tokens as styles.css). */
+:root {
+  --bg: #1e1e1e;
+  --bar: #2c2c2c;
+  --bar-edge: #0f0f0f;
+  --fg: #e6e6e6;
+  --hi: #ffffff;
+  --dim: #8f8f8f;
+  --rule: #2f2f2f;
+  --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.65;
+  font-variant-ligatures: none;
+  -webkit-font-smoothing: antialiased;
+}
+a { color: var(--hi); text-decoration-color: #6a6a6a; text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+a:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+code { color: var(--hi); }
+
+.bar {
+  position: sticky; top: 0; z-index: 1;
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  min-height: 38px; padding: 4px 16px;
+  background: var(--bar); border-bottom: 1px solid var(--bar-edge);
+  font-family: var(--sans); font-size: 13px;
+}
+.brand { display: inline-flex; align-items: center; gap: 7px; color: var(--fg); font-weight: 600; text-decoration: none; }
+.logo { width: 16px; height: 16px; }
+.nav { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; }
+.nav a { color: var(--dim); text-decoration: none; }
+.nav a:hover, .nav a[aria-current="page"] { color: var(--fg); }
+
+.doc { max-width: 78ch; margin: 0 auto; padding: 32px 16px 80px; }
+h1 { margin: 0 0 14px; font-size: 22px; color: var(--hi); }
+h2 { margin: 36px 0 10px; font-size: 16px; color: var(--hi); scroll-margin-top: 56px; }
+h3 { margin: 20px 0 6px; font-size: 14px; color: var(--hi); }
+.lede { font-size: 15px; }
+.toc { color: var(--dim); }
+.toc a { color: var(--dim); }
+ul { padding-left: 2ch; }
+li { margin: 4px 0; }
+pre {
+  overflow-x: auto; margin: 12px 0; padding: 12px 14px;
+  background: #171717; border: 1px solid var(--rule); border-radius: 4px; color: var(--fg);
+}
+table { width: 100%; border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; }
+th, td { padding: 6px 14px 6px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
+th { color: var(--dim); font-weight: 400; }
+.foot { margin-top: 48px; color: var(--dim); }

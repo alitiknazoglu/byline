@@ -86,13 +86,22 @@ function Banner() {
         {BANNER}
       </pre>
       <Line>
-        <b>Every agent action, credited.</b>{" "}
+        <h1 className="tagline">Every agent action, credited.</h1>{" "}
         <span className="t-dim">
           registry {REGISTRY} · agents read <a href="/llms.txt">/llms.txt</a>
         </span>
       </Line>
+      <Line tone="dim">
+        Identity and track record for AI agents, kept by the NEAR blockchain: the start of a credit history for agents.
+      </Line>
     </>
   );
+}
+
+/** The command a page path stands for: /agents/<code> → `show <code>`. The leaderboard already runs at boot. */
+function pathCommand(pathname: string): string | null {
+  const m = /^\/agents\/([^/]+)\/?$/.exec(pathname);
+  return m ? `show ${decodeURIComponent(m[1]!)}` : null;
 }
 
 const lastLogin = () =>
@@ -254,14 +263,15 @@ export function Terminal() {
   );
   runRef.current = run;
 
-  // Boot: banner, what this is, the live leaderboard, then any deep-linked command (#show/<code>).
+  // Boot: banner, what this is, the live leaderboard, then any deep-linked command:
+  // a page path (/agents/<code>) or the older hash links (#show/<code>, #quote), which still work.
   useEffect(() => {
     if (booted.current) return; // React dev mode runs effects twice; boot once.
     booted.current = true;
     push({ out: <Banner /> });
     run("about", { record: false, boot: true });
     run("top", { record: false, boot: true });
-    const deep = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""))
+    const deep = (pathCommand(window.location.pathname) ?? decodeURIComponent(window.location.hash.replace(/^#\/?/, "")))
       .replace(/\//g, " ")
       .trim();
     if (deep && COMMAND_NAMES.includes(deep.split(" ")[0]!))
@@ -338,13 +348,20 @@ export function Terminal() {
             <span>byline</span>
           </a>
           <nav className="nav" aria-label="Byline">
-            <button
-              type="button"
+            <a
               className="navlink"
-              onClick={() => run("top")}
+              href="/leaderboard"
+              onClick={(e) => {
+                if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) return; // new tab: let the link open
+                e.preventDefault();
+                run("top");
+              }}
             >
               leaderboard
-            </button>
+            </a>
+            <a className="navlink" href="/docs">
+              docs
+            </a>
             <button
               type="button"
               className="navlink"
@@ -461,11 +478,23 @@ export function Terminal() {
         </main>
 
         <footer className="status">
-          <span className="seg">{room}</span>
+          <span className="seg">{room === "sample" ? "sample" : `NEAR ${room}`}</span>
           <a className="seg seg-link" href={OTHER_SITE} title={`Open Byline on ${OTHER_NETWORK}`}>
             {OTHER_NETWORK} ↗
           </a>
-          <span className="seg">registry {REGISTRY}</span>
+          <a
+            className="seg seg-link"
+            href={`${IS_MAINNET ? "https://nearblocks.io" : "https://testnet.nearblocks.io"}/address/${REGISTRY}?tab=contract`}
+            target="_blank"
+            rel="noreferrer"
+            title={IS_MAINNET ? "The registry contract on NearBlocks (source verified)" : "The registry contract on NearBlocks"}
+          >
+            registry {REGISTRY}
+            {IS_MAINNET ? " ✓ verified" : ""}
+          </a>
+          <a className="seg seg-link hide-sm" href="https://github.com/alitiknazoglu/byline" target="_blank" rel="noreferrer">
+            github ↗
+          </a>
           <span className="seg hide-sm">
             indexed {indexedAt ? ago(indexedAt) : "…"}
           </span>

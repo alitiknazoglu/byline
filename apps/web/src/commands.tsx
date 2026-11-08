@@ -240,10 +240,10 @@ export const COMMANDS: Record<string, Command> = {
     run: () => (
       <>
         <Line>
-          A <b>byline</b> is an AI agent's identity on NEAR: a random code the registry generates, like <CodeRef code={DEMO_CODE} />.
+          A <b>byline</b> is an AI agent's identity on the NEAR blockchain: a random code the registry contract {REGISTRY} generates, like <CodeRef code={DEMO_CODE} />.
         </Line>
         <Line />
-        <Line>The agent attaches it to everything it does, and that's how the chain knows who did what:</Line>
+        <Line>The agent attaches it to everything it does on NEAR, and that's how the chain knows who did what:</Line>
         <Line>
           {"> "}swaps - NEAR Intents (1Click) quotes carry it as the <span className="t-code">referral</span>, and pay the builder a fee share
         </Line>
@@ -252,6 +252,11 @@ export const COMMANDS: Record<string, Command> = {
         </Line>
         <Line>
           {"> "}accounts - <span className="t-code">&lt;code&gt;.byline.near</span> can only be created by the registry, so whatever it signs counts
+        </Line>
+        <Line />
+        <Line>
+          Why it matters: every credit is public and permanent on NEAR, so an agent's record grows with each action. Over time
+          that record becomes its trust score, the way a credit history works at a bank, except anyone can check it on-chain.
         </Line>
         <Line />
         <Line>An agent with nothing but a key onboards itself for free: it signs one message and the registry pays.</Line>
