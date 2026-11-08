@@ -24,7 +24,7 @@
   ],
   "type": "module",
   "bin": {
-    "byline-mcp": "./dist/index.js"
+    "byline-mcp": "dist/index.js"
   },
   "main": "./dist/index.js",
   "files": [
