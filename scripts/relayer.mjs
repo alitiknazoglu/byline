@@ -16,7 +16,9 @@ if (!privateKey) {
   console.error(`Set RELAYER_${network.toUpperCase()}_KEY in .env (a function-call key on the registry limited to register_signed).`);
   process.exit(1);
 }
-const { UPSTASH_REDIS_REST_URL: upUrl, UPSTASH_REDIS_REST_TOKEN: upToken, RELAYER_POW_BITS: powEnv } = process.env;
+const upUrl = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const upToken = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+const powEnv = process.env.RELAYER_POW_BITS;
 const relayer = new Relayer({
   network,
   privateKey,

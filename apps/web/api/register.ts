@@ -22,8 +22,9 @@ function defaultNetwork(request: Request): NetworkId {
 }
 
 function rateStore(): RateStore | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+  // Upstash's own names, or the ones Vercel's Upstash integration sets.
+  const url = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
   return url && token ? upstashRateStore(url, token) : null;
 }
 
