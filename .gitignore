@@ -15,3 +15,5 @@ apps/web/.impeccable/questions/
 # Local agent tooling (third-party skills), not part of Byline
 .claude/
 skills-lock.json
+# Vercel CLI link (local)
+.vercel
