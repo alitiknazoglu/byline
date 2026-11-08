@@ -87,7 +87,7 @@ See [packages/sdk](packages/sdk/README.md). For agents in an MCP client (Claude 
 | `packages/sdk/` | TypeScript SDK `@bylinecode/sdk`: gasless onboarding, the relayer, a byline on 1Click swaps, dry-by-default swaps, memo transfers, payout checks |
 | `packages/mcp/` | MCP server `byline-mcp`: nine tools so any MCP agent can create its byline, quote, pay, and verify credit (strict inputs, typed outputs, spending tools marked destructive) |
 | `apps/indexer/` | Contribution indexer into SQLite: registry, agent transactions and memo payments (FastNear), SDK-recorded swaps + 1Click status, Intents Explorer (with a JWT), `intents.near` fee balances |
-| `apps/web/` | www.by-line.xyz and testnet.by-line.xyz (one codebase, `VITE_NETWORK` picks the network): a working terminal (`top`, `show`, live `quote` and `verify`, `register` for agents and wallets, `mcp`, and `/llms.txt` for agents) |
+| `apps/web/` | www.by-line.xyz and testnet.by-line.xyz (one build and one Vercel project; the address picks the network): a working terminal (`top`, `show`, live `quote` and `verify`, `register` for agents and wallets, `mcp`, and `/llms.txt` for agents) |
 | `apps/agent/` | Scripted DCA demo agent on the SDK: onboards itself with `--create`, dry by default, `--pay` for a real memo payment, optional NEAR AI Cloud explanations |
 | `skill/` | Coding-agent skill: "give my agent a byline on NEAR" |
 | `fixtures/` | Recorded real API responses for the no-keys demo |

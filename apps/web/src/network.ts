@@ -1,14 +1,24 @@
 /**
- * Which network this build of the site serves. One codebase, two deployments:
- *   testnet.by-line.xyz → VITE_NETWORK=testnet (default)
- *   www.by-line.xyz     → VITE_NETWORK=mainnet
+ * Which network this page serves. One build, one Vercel project, picked by the address it's opened on:
+ *   testnet.by-line.xyz              → testnet
+ *   www.by-line.xyz, by-line.xyz     → mainnet
+ *   anything else (localhost, *.vercel.app previews) → VITE_NETWORK, or testnet
  * Everything network-specific lives here so no command hard-codes a network.
  */
 export type NetworkId = "testnet" | "mainnet";
 
-const raw = (import.meta.env.VITE_NETWORK as string | undefined)?.trim().toLowerCase();
+/** The network for a host name. Known Byline domains win; otherwise the fallback (VITE_NETWORK or testnet). */
+export function networkForHost(host: string, fallback?: string): NetworkId {
+  const h = host.toLowerCase().replace(/:\d+$/, "");
+  if (h === "testnet.by-line.xyz") return "testnet";
+  if (h === "by-line.xyz" || h === "www.by-line.xyz") return "mainnet";
+  return fallback?.trim().toLowerCase() === "mainnet" ? "mainnet" : "testnet";
+}
 
-export const NETWORK: NetworkId = raw === "mainnet" ? "mainnet" : "testnet";
+export const NETWORK: NetworkId = networkForHost(
+  typeof window === "undefined" ? "" : window.location.hostname,
+  import.meta.env.VITE_NETWORK as string | undefined,
+);
 export const IS_MAINNET = NETWORK === "mainnet";
 
 /** The registry contract (and the parent of every `<code>.<registry>` agent account). */
@@ -29,7 +39,8 @@ export function registryMissing(e: unknown): boolean {
   return /CodeDoesNotExist|does not exist|doesn't exist|UNKNOWN_ACCOUNT|MethodNotFound/i.test(m) && m.includes(REGISTRY);
 }
 
-/** The agent the site shows by default (`show`, `quote`, `pay`). Set per deployment once its agent exists. */
-export const DEMO_CODE = ((import.meta.env.VITE_DEMO_CODE as string | undefined) || "nw5s2ea1").trim();
-/** A transaction the `verify` button checks. Testnet default: nw5s2ea1's first memo payment. */
-export const DEMO_TX = ((import.meta.env.VITE_DEMO_TX as string | undefined) || (IS_MAINNET ? "" : "Aq3oHWpAJS57XARbRS8a2mta7kCxecUwHrM8RM3yE2h")).trim();
+/** The agent the site shows by default (`show`, `quote`, `pay`), per network. Set the mainnet one once its agent exists. */
+const env = import.meta.env as Record<string, string | undefined>;
+export const DEMO_CODE = ((IS_MAINNET ? env.VITE_DEMO_CODE_MAINNET : env.VITE_DEMO_CODE_TESTNET) || "nw5s2ea1").trim();
+/** A transaction the `verify` button checks. Testnet default: nw5s2ea1's first memo payment; none on mainnet until set. */
+export const DEMO_TX = ((IS_MAINNET ? env.VITE_DEMO_TX_MAINNET : env.VITE_DEMO_TX_TESTNET) || (IS_MAINNET ? "" : "Aq3oHWpAJS57XARbRS8a2mta7kCxecUwHrM8RM3yE2h")).trim();

@@ -53,14 +53,21 @@ The site is a working terminal. Type a command, or click one: every code and sug
 
 ## Deploy (Vercel, free tier)
 
-One codebase, two Vercel projects from the same repo. `vercel.json` builds the SDK, then this app, from the repo root; set each project's root directory to `apps/web`.
+One codebase, **one Vercel project (`byline`)**, built from the repo root (`vercel.json` builds the SDK and the indexer's parsers, then this app; the project's root directory is `apps/web`). The page and the relayer pick the network from the address they're opened on:
 
-| project | domain | environment variables |
-| --- | --- | --- |
-| `byline-testnet` | `testnet.by-line.xyz` | `VITE_NETWORK=testnet`, `RELAYER_TESTNET_KEY`, optional `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`, `RELAYER_POW_BITS` |
-| `byline` | `www.by-line.xyz` (and `by-line.xyz` redirecting to it) | `VITE_NETWORK=mainnet`, `RELAYER_MAINNET_KEY`, **required** `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`, `VITE_DEMO_CODE` / `VITE_DEMO_TX` once the mainnet demo agent exists |
+| domain | network |
+| --- | --- |
+| `testnet.by-line.xyz` | testnet (`byline.testnet`) |
+| `www.by-line.xyz`, `by-line.xyz` | mainnet (`byline.near`) |
+| anything else (localhost, `*.vercel.app` previews) | `VITE_NETWORK`, or testnet |
 
-Everything network-specific (registry, wNEAR contract, explorer links, wallet network, the link to the other site) comes from `src/network.ts`. Locally: `npm run web` (testnet) or `npm run web:mainnet`. Refresh `public/data/*.json` by re-running the indexer's export and redeploying.
+Environment variables on the project:
+
+- `RELAYER_TESTNET_KEY` and `RELAYER_MAINNET_KEY`: function-call keys limited to `register_signed`, with a finite allowance. Mark them Sensitive.
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN`: shared per-IP rate limit. **Required for mainnet** (the relayer refuses mainnet without it).
+- Optional: `RELAYER_POW_BITS` (default 20); `VITE_DEMO_CODE_MAINNET` / `VITE_DEMO_TX_MAINNET` (and `_TESTNET`) for the default demo agent and `verify` button.
+
+Everything network-specific (registry, wNEAR contract, explorer links, wallet network, the link to the other site) comes from `src/network.ts`. Locally: `npm run web` (testnet) or `npm run web:mainnet`. Refresh `public/data/*.json` by re-running the indexer's export and pushing.
 
 ## Design
 

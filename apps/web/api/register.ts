@@ -11,8 +11,15 @@ import { Relayer, memoryRateStore, upstashRateStore, type RateStore } from "@byl
 import type { NetworkId } from "@bylinecode/sdk";
 
 const relayers: Partial<Record<NetworkId, Relayer>> = {};
-/** The network this deployment serves when a request doesn't say (testnet.by-line.xyz vs www.by-line.xyz). */
-const DEFAULT_NETWORK: NetworkId = (process.env.RELAYER_NETWORK ?? process.env.VITE_NETWORK) === "testnet" ? "testnet" : "mainnet";
+/**
+ * The network a request is for when it doesn't say: picked by the address it came in on, like the site.
+ * testnet.by-line.xyz → testnet; www.by-line.xyz / by-line.xyz → mainnet; anything else (previews) → testnet.
+ */
+function defaultNetwork(request: Request): NetworkId {
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? new URL(request.url).host).toLowerCase().replace(/:\d+$/, "");
+  if (host === "by-line.xyz" || host === "www.by-line.xyz") return "mainnet";
+  return "testnet";
+}
 
 function rateStore(): RateStore | null {
   const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -46,7 +53,7 @@ export function OPTIONS() {
 }
 
 export async function POST(request: Request) {
-  const network = (new URL(request.url).searchParams.get("network") ?? DEFAULT_NETWORK) as NetworkId;
+  const network = (new URL(request.url).searchParams.get("network") ?? defaultNetwork(request)) as NetworkId;
   if (network !== "mainnet" && network !== "testnet") return json(400, { error: "network must be mainnet or testnet" });
   const relayer = relayerFor(network);
   if (!relayer) return json(503, { error: `Gasless onboarding isn't open on ${network} yet` });
@@ -57,7 +64,7 @@ export async function POST(request: Request) {
 }
 
 export async function GET(request: Request) {
-  const network = (new URL(request.url).searchParams.get("network") ?? DEFAULT_NETWORK) as NetworkId;
+  const network = (new URL(request.url).searchParams.get("network") ?? defaultNetwork(request)) as NetworkId;
   const relayer = relayerFor(network);
   if (!relayer) return json(503, { error: `Gasless onboarding isn't open on ${network} yet` });
   return json(200, { network, registry: relayer.registry.contractId, sponsored: await relayer.registry.getSponsorStatus(), pow_bits: relayer.powBits });
