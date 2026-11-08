@@ -44,6 +44,7 @@ export {
 } from "./names.js";
 export {
   REGISTRY_IDS,
+  registryFor,
   type AppFee,
   type Attribution,
   type BylineEvent,

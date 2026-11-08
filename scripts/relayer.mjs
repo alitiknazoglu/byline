@@ -5,6 +5,7 @@
 // optional RELAYER_POW_BITS (default 20) and UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN.
 import http from "node:http";
 import { Relayer, memoryRateStore, upstashRateStore } from "../packages/sdk/dist/relay.js";
+import { registryFor } from "../packages/sdk/dist/index.js";
 
 try {
   process.loadEnvFile(new URL("../.env", import.meta.url));
@@ -22,7 +23,7 @@ const powEnv = process.env.RELAYER_POW_BITS;
 const relayer = new Relayer({
   network,
   privateKey,
-  registryId: process.env.REGISTRY_CONTRACT_ID || undefined,
+  registryId: registryFor(network, process.env.REGISTRY_CONTRACT_ID, (m) => console.warn(m)),
   rateStore: upUrl && upToken ? upstashRateStore(upUrl, upToken) : memoryRateStore(),
   powBits: powEnv === undefined ? undefined : Number(powEnv),
 });

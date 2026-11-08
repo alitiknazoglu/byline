@@ -1,0 +1,119 @@
+{
+ "label": "mainnet",
+ "network": "mainnet",
+ "registry": "byline.near",
+ "generatedAt": "2026-11-08T18:46:26.615Z",
+ "sample": false,
+ "summary": {
+  "bylines": 1,
+  "accounts": 1,
+  "swaps": 0,
+  "volume_usd": 0,
+  "builder_fees_usd": 0,
+  "txs": 0,
+  "memo_transfers": 0,
+  "memo_payers": 0,
+  "sample": false
+ },
+ "rows": [
+  {
+   "name": "zertrk6r",
+   "title": "Byline demo DCA agent",
+   "owner": "zertrk6r.byline.near",
+   "payout": "zertrk6r.byline.near",
+   "fee_bps": 40,
+   "account": "zertrk6r.byline.near",
+   "accounts": 1,
+   "swaps": 0,
+   "swaps_failed": 0,
+   "volume_usd": 0,
+   "builder_fees_usd": 0,
+   "txs": 0,
+   "counterparties": 0,
+   "memo_transfers": 0,
+   "memo_payers": 0,
+   "dry_quotes": 0,
+   "sample": false
+  }
+ ],
+ "details": {
+  "zertrk6r": {
+   "byline": {
+    "name": "zertrk6r",
+    "title": "Byline demo DCA agent",
+    "owner": "zertrk6r.byline.near",
+    "payout": "zertrk6r.byline.near",
+    "fee_bps": 40,
+    "account": "zertrk6r.byline.near",
+    "accounts": 1,
+    "swaps": 0,
+    "swaps_failed": 0,
+    "volume_usd": 0,
+    "builder_fees_usd": 0,
+    "txs": 0,
+    "counterparties": 0,
+    "memo_transfers": 0,
+    "memo_payers": 0,
+    "dry_quotes": 0,
+    "sample": false
+   },
+   "accounts": [
+    {
+     "account_id": "zertrk6r.byline.near",
+     "kind": "own"
+    }
+   ],
+   "swaps": [],
+   "txs": [],
+   "memoTransfers": [],
+   "events": [
+    {
+     "receipt_id": "8VQYmTySNdC5yTrdApryLcGuxYj4kmt3n2ao1w3ejhjy",
+     "log_index": 0,
+     "network": "mainnet",
+     "tx_hash": "31abFX92qjKgaoNGtoT8pGJnpBNxdBTJQmrveSEjyzbH",
+     "standard": "byline",
+     "event": "account_created",
+     "name": "zertrk6r",
+     "data": "[{\"code\":\"zertrk6r\",\"account_id\":\"zertrk6r.byline.near\"}]",
+     "block_ts_ms": 1794163471819
+    },
+    {
+     "receipt_id": "8VQYmTySNdC5yTrdApryLcGuxYj4kmt3n2ao1w3ejhjy",
+     "log_index": 1,
+     "network": "mainnet",
+     "tx_hash": "31abFX92qjKgaoNGtoT8pGJnpBNxdBTJQmrveSEjyzbH",
+     "standard": "byline",
+     "event": "account_linked",
+     "name": "zertrk6r",
+     "data": "[{\"code\":\"zertrk6r\",\"account_id\":\"zertrk6r.byline.near\"}]",
+     "block_ts_ms": 1794163471819
+    },
+    {
+     "receipt_id": "5vkb7czKvhi83Cvn1tsjdA3MduCewqDXRaaLZ5UBuqvy",
+     "log_index": 0,
+     "network": "mainnet",
+     "tx_hash": "31abFX92qjKgaoNGtoT8pGJnpBNxdBTJQmrveSEjyzbH",
+     "standard": "nep171",
+     "event": "nft_mint",
+     "name": "zertrk6r",
+     "data": "[{\"owner_id\":\"zertrk6r.byline.near\",\"token_ids\":[\"zertrk6r\"]}]",
+     "block_ts_ms": 1794163470730
+    },
+    {
+     "receipt_id": "5vkb7czKvhi83Cvn1tsjdA3MduCewqDXRaaLZ5UBuqvy",
+     "log_index": 1,
+     "network": "mainnet",
+     "tx_hash": "31abFX92qjKgaoNGtoT8pGJnpBNxdBTJQmrveSEjyzbH",
+     "standard": "byline",
+     "event": "byline_registered",
+     "name": "zertrk6r",
+     "data": "[{\"code\":\"zertrk6r\",\"owner\":\"zertrk6r.byline.near\",\"payout\":\"zertrk6r.byline.near\",\"fee_bps\":40,\"via\":\"signed\",\"public_key\":\"ed25519:8U3qcSETfRt9WXthXC2ogi86dMGHPzDJSj67Wk66cgMf\"}]",
+     "block_ts_ms": 1794163470730
+    }
+   ],
+   "quotes": [],
+   "intentsBalances": []
+  }
+ }
+}

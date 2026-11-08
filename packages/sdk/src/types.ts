@@ -7,6 +7,21 @@ export const REGISTRY_IDS: Record<NetworkId, string> = {
   testnet: "byline.testnet",
 };
 
+/**
+ * A registry id from config (e.g. REGISTRY_CONTRACT_ID) if it belongs to `network`, else the default.
+ * Guards against a testnet override leaking into mainnet runs (`x.testnet` on mainnet, or `x.near` on testnet).
+ */
+export function registryFor(network: NetworkId, override?: string | null, warn?: (m: string) => void): string {
+  const id = override?.trim();
+  if (!id) return REGISTRY_IDS[network];
+  const isTestnetId = id.endsWith(".testnet");
+  if ((network === "mainnet") === isTestnetId) {
+    warn?.(`ignoring registry override ${id}: it isn't a ${network} account; using ${REGISTRY_IDS[network]}`);
+    return REGISTRY_IDS[network];
+  }
+  return id;
+}
+
 /** `get_byline`: one agent's byline as stored in the registry. */
 export interface BylineRecord {
   /** The random code the registry generated, e.g. "k7m2x9qa". It is the referral and the memo tag. */

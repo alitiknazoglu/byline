@@ -23,7 +23,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Byline, RELAYER_URLS, REGISTRY_IDS, type NetworkId, type QuoteResult } from "@bylinecode/sdk";
+import { Byline, RELAYER_URLS, REGISTRY_IDS, type NetworkId, type QuoteResult, registryFor } from "@bylinecode/sdk";
 import { createAgentByline, jsonlRecorder, nearFromCredentials } from "@bylinecode/sdk/node";
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
@@ -103,7 +103,7 @@ const AGENT_FILE = resolve(REPO, "data", `agent-${network}.json`);
 
 async function identity(): Promise<{ code: string; accountId: string; created?: boolean }> {
   const explicit = opt("code", "");
-  const registry = process.env.REGISTRY_CONTRACT_ID || REGISTRY_IDS[network];
+  const registry = registryFor(network, process.env.REGISTRY_CONTRACT_ID, (m) => console.warn(m));
   if (explicit) return { code: explicit, accountId: `${explicit}.${registry}` };
   const saved = await readFile(AGENT_FILE, "utf8").then((t) => JSON.parse(t) as { code: string; accountId: string }, () => null);
   if (saved && !flag("create")) return saved;
@@ -113,7 +113,7 @@ async function identity(): Promise<{ code: string; accountId: string; created?: 
   const relayerUrl = process.env.BYLINE_RELAYER_URL || RELAYER_URLS[network];
   const created = await createAgentByline({
     network,
-    registryId: process.env.REGISTRY_CONTRACT_ID || undefined,
+    registryId: registry,
     relayerUrl,
     title: opt("title", "Byline demo DCA agent"),
     description: "Scripted DCA agent from the Byline repo: quotes USDC → wNEAR every round, credited to its code.",

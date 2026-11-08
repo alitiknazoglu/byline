@@ -9,6 +9,7 @@
  *   show NAME   [--network …] [--db FILE] [--json]
  *   export      [--network …] [--db FILE] [--label NAME] [--out FILE]        JSON snapshot for the web app
  */
+import { registryFor } from "@bylinecode/sdk";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -55,7 +56,7 @@ async function main() {
       const db = openDb(dbPath);
       const ctx = createContext({
         network,
-        registryId: flags.get("registry") ?? process.env.REGISTRY_CONTRACT_ID,
+        registryId: flags.get("registry") ?? registryFor(network, process.env.REGISTRY_CONTRACT_ID, log),
         explorerJwt: process.env.EXPLORER_JWT || undefined,
         oneClickJwt: process.env.ONECLICK_JWT || undefined,
         log,
@@ -117,7 +118,7 @@ async function main() {
       const snapshot = {
         label,
         network,
-        registry: process.env.REGISTRY_CONTRACT_ID ?? (network === "mainnet" ? "byline.near" : "byline.testnet"),
+        registry: registryFor(network, process.env.REGISTRY_CONTRACT_ID),
         generatedAt: new Date().toISOString(),
         sample: rows.some((r) => r.sample),
         summary: summary(db, network),
