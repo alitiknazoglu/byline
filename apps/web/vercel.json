@@ -4,26 +4,52 @@
   "buildCommand": "cd ../.. && npm run build -w @bylinecode/sdk -w @bylinecode/indexer && npm run build -w @bylinecode/web",
   "outputDirectory": "dist",
   "cleanUrls": true,
-  "routes": [
-    {
-      "src": "^/$",
-      "has": [{ "type": "header", "key": "accept", "value": { "re": "text/markdown" } }],
-      "dest": "/llms.txt",
-      "headers": { "Vary": "Accept" }
-    }
-  ],
   "rewrites": [
-    { "source": "/agents/:code", "destination": "/" }
+    {
+      "source": "/agents/:code",
+      "destination": "/"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
-      "has": [{ "type": "host", "value": "testnet.by-line.xyz" }],
-      "headers": [{ "key": "X-Robots-Tag", "value": "noindex" }]
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'none'; base-uri 'self'; object-src 'none'"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        }
+      ]
     },
     {
-      "source": "/",
-      "headers": [{ "key": "Vary", "value": "Accept" }]
+      "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "testnet.by-line.xyz"
+        }
+      ],
+      "headers": [
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex"
+        }
+      ]
     },
     {
       "source": "/data/(.*)",

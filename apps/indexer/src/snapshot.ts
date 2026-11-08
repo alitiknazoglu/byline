@@ -29,7 +29,8 @@ export function buildSnapshot(db: DatabaseSync, network: NetworkId, registry: st
     sample: rows.some((r) => r.sample),
     summary: summary(db, network),
     rows,
-    details: Object.fromEntries(rows.map((r) => [r.name, bylineDetail(db, network, r.name, 100)])),
+    // The leaderboard is computed once; each detail reuses its row instead of recomputing all of them.
+    details: Object.fromEntries(rows.map((r) => [r.name, bylineDetail(db, network, r.name, 100, r)])),
   };
 }
 
@@ -44,11 +45,20 @@ export async function indexNetwork(opts: {
   oneClickJwt?: string;
   explorerJwt?: string;
   log?: (msg: string) => void;
+  /** Stop fetching after this long and build the snapshot from what's in (default: no limit). */
+  budgetMs?: number;
 }): Promise<Snapshot> {
   const registry = registryFor(opts.network, opts.registryId);
   const db = openDb(":memory:");
   try {
-    const ctx = createContext({ network: opts.network, registryId: registry, oneClickJwt: opts.oneClickJwt, explorerJwt: opts.explorerJwt, log: opts.log });
+    const ctx = createContext({
+      network: opts.network,
+      registryId: registry,
+      oneClickJwt: opts.oneClickJwt,
+      explorerJwt: opts.explorerJwt,
+      log: opts.log,
+      deadline: opts.budgetMs ? Date.now() + opts.budgetMs : undefined,
+    });
     await syncAll(db, ctx);
     return buildSnapshot(db, opts.network, registry);
   } finally {

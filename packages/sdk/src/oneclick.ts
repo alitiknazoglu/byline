@@ -161,6 +161,7 @@ export class OneClick {
       method,
       headers,
       body: body === undefined ? undefined : JSON.stringify(body),
+      signal: AbortSignal.timeout(20_000),
     });
     const text = await res.text();
     let parsed: unknown = text;

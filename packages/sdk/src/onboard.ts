@@ -7,6 +7,7 @@
  */
 import { generateKey, generateNonce, verifyNep413Signature, type KeyPair } from "near-kit";
 import { DEFAULT_POW_BITS, solvePow } from "./pow.js";
+import { isValidCode } from "./names.js";
 import { Registry } from "./registry.js";
 import type { NetworkId } from "./types.js";
 
@@ -116,7 +117,7 @@ export async function createByline(opts: CreateBylineOptions): Promise<CreatedBy
   const reg = signRegistration(keyPair, registry.contractId, { payout, fee_bps, title, description });
   const doFetch = opts.fetch ?? globalThis.fetch.bind(globalThis);
   const relayerUrl = opts.relayerUrl ?? RELAYER_URLS[opts.network];
-  type Reply = { code?: string; account_id?: string; tx_hash?: string; error?: string; pow_bits?: number };
+  type Reply = { code?: string; account_id?: string; tx_hash?: string; error?: string; pow_bits?: number; retry_after_s?: number };
   const post = async (bits: number) => {
     const res = await doFetch(relayerUrl, {
       method: "POST",
@@ -125,16 +126,29 @@ export async function createByline(opts: CreateBylineOptions): Promise<CreatedBy
     });
     return { res, body: (await res.json().catch(() => null)) as Reply | null };
   };
-  let { res, body } = await post(opts.powBits ?? DEFAULT_POW_BITS);
+  let bits = opts.powBits ?? DEFAULT_POW_BITS;
+  let { res, body } = await post(bits);
   // The relayer may ask for a different difficulty: solve that once and retry.
-  if (res.status === 428 && body?.pow_bits !== undefined && body.pow_bits !== (opts.powBits ?? DEFAULT_POW_BITS)) {
-    ({ res, body } = await post(body.pow_bits));
+  if (res.status === 428 && body?.pow_bits !== undefined && body.pow_bits !== bits) {
+    bits = body.pow_bits;
+    ({ res, body } = await post(bits));
+  }
+  // The relayer onboards one agent at a time: if it's busy, wait as it asks and send the same body again.
+  for (let i = 0; i < 6 && res.status === 503 && typeof body?.retry_after_s === "number"; i++) {
+    await new Promise((r) => setTimeout(r, Math.min(30, Math.max(1, body!.retry_after_s!)) * 1000));
+    ({ res, body } = await post(bits));
   }
   if (!body) throw new RelayerError(res.status, `No relayer answered at ${relayerUrl} (HTTP ${res.status}, not JSON). Run one with \`npm run relayer\` and set relayerUrl.`);
   if (!res.ok || !body.code) throw new RelayerError(res.status, `The relayer didn't register this agent: ${body.error ?? `HTTP ${res.status}`}`);
+  // Trust the registry, not the relayer: the code must be the one the chain holds for this key, and the
+  // account name is derived from it here (it ends up in a key-file path).
+  const onChain = await registry.getBylineForKey(publicKey);
+  if (!onChain || onChain !== body.code || !isValidCode(onChain)) {
+    throw new RelayerError(502, `The relayer answered with code ${JSON.stringify(body.code)}, but the registry holds ${onChain ? `"${onChain}"` : "nothing"} for this key`);
+  }
   return {
-    code: body.code,
-    accountId: body.account_id ?? registry.agentAccountId(body.code),
+    code: onChain,
+    accountId: registry.agentAccountId(onChain),
     publicKey,
     keyPair,
     txHash: body.tx_hash,

@@ -24,7 +24,7 @@ import {
   type BylineEvent,
   type PayoutChecker,
 } from "../src/index.js";
-import { Relayer, upstashRateStore } from "../src/relay.js";
+import { Relayer, registerMessageProblem, upstashRateStore } from "../src/relay.js";
 
 // ---------- fakes ----------
 
@@ -441,6 +441,74 @@ describe("gasless onboarding", () => {
     expect(state.submitted).toHaveLength(0);
   });
 
+  it("relayer: refuses, before paying gas, any message the registry would reject", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const relayer = new Relayer({ network: "testnet", registry: fakeRegistry(state), powBits: 0 });
+    const bad = [
+      { fee_bps: 9999 },
+      { fee_bps: 1.5 },
+      { title: "é".repeat(33) }, // 66 bytes: the contract counts bytes, not characters
+      { description: "x".repeat(281) },
+      { payout: "Not An Account" },
+      { surprise: true } as Record<string, unknown>,
+    ];
+    for (const fields of bad) {
+      const r = await relayer.handle(signRegistration(generateKey(), "byline.testnet", fields as never), "1.1.1.1");
+      expect(r.status, JSON.stringify(fields)).toBe(400);
+    }
+    // A message that parses to null, or a body that isn't an object, is a clean 400 too.
+    const key = generateKey();
+    const ok = signRegistration(key, "byline.testnet", {});
+    expect((await relayer.handle({ ...ok, message: "null" }, "1.1.1.1")).status).toBe(400);
+    expect((await relayer.handle("nope", "1.1.1.1")).status).toBe(400);
+    expect(state.submitted).toHaveLength(0);
+    expect(registerMessageProblem({ action: "register", expires_at_ms: Date.now() + 60_000, title: "é".repeat(32), fee_bps: 100 })).toBeNull();
+  });
+
+  it("relayer: submits a signed body at most once, even if the registry refuses it", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    registry.registerSigned = vi.fn(async (reg) => {
+      state.submitted.push(reg);
+      throw new Error("Smart contract panicked: something on-chain");
+    });
+    const relayer = new Relayer({ network: "testnet", registry, powBits: 0 });
+    const reg = signRegistration(generateKey(), "byline.testnet", {});
+    expect((await relayer.handle(reg, "1.1.1.1")).status).toBe(400);
+    expect((await relayer.handle(reg, "2.2.2.2")).status).toBe(409);
+    expect(state.submitted).toHaveLength(1);
+    // Only the four signed fields go on-chain, whatever else the request carried.
+    expect(Object.keys(state.submitted[0] as object).sort()).toEqual(["message", "nonce", "public_key", "signature"]);
+  });
+
+  it("relayer: onboards one agent at a time and caps registrations per hour overall", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    let release!: () => void;
+    const gate = new Promise<void>((r) => (release = r));
+    const inner = registry.registerSigned;
+    registry.registerSigned = vi.fn(async (reg) => {
+      await gate;
+      return inner(reg);
+    });
+    const relayer = new Relayer({ network: "testnet", registry, powBits: 0, globalPerHour: 2 });
+    const first = relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "1.1.1.1");
+    await new Promise((r) => setTimeout(r, 10));
+    const second = await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "2.2.2.2");
+    expect(second).toMatchObject({ status: 503, body: { retry_after_s: 5 } });
+    release();
+    expect((await first).status).toBe(200);
+    expect((await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "3.3.3.3")).status).toBe(200);
+    expect((await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "4.4.4.4")).status).toBe(429);
+  });
+
+  it("createByline: trusts the registry, not the relayer, for the code and account", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    const lying = vi.fn(async () => new Response(JSON.stringify({ code: "zzzzzzzz", account_id: "../../stolen" }), { status: 200 }));
+    await expect(createByline({ network: "testnet", registry, fetch: lying as unknown as typeof fetch, relayerUrl: "http://relayer", powBits: 0 })).rejects.toThrow(/registry holds nothing/);
+  });
+
   it("relayer: rate-limits per address and respects the sponsor quota", async () => {
     const state = { keys: {}, used: 0, limit: 100, submitted: [] as unknown[] };
     const relayer = new Relayer({ network: "testnet", registry: fakeRegistry(state), perIpPerHour: 2, powBits: 0 });
@@ -513,20 +581,36 @@ describe("gasless onboarding", () => {
   });
 
   it("relayer: shares rate-limit counts through a store (Upstash REST)", async () => {
-    const counts = new Map<string, number>();
-    const calls: unknown[] = [];
-    const fakeUpstash = vi.fn(async (_url: string, init?: RequestInit) => {
-      const cmd = JSON.parse(String(init!.body)) as [string, string, number?];
-      calls.push(cmd);
-      if (cmd[0] === "INCR") counts.set(cmd[1], (counts.get(cmd[1]) ?? 0) + 1);
-      return new Response(JSON.stringify({ result: cmd[0] === "INCR" ? counts.get(cmd[1]) : 1 }));
+    // A tiny Upstash stand-in: SET (with NX), INCR and DEL, single commands at the root and batches at /pipeline.
+    const values = new Map<string, number>();
+    const calls: { path: string; body: unknown }[] = [];
+    const run = (cmd: (string | number)[]) => {
+      if (cmd[0] === "INCR") {
+        values.set(String(cmd[1]), (values.get(String(cmd[1])) ?? 0) + 1);
+        return values.get(String(cmd[1]));
+      }
+      if (cmd[0] === "DEL") return Number(values.delete(String(cmd[1])));
+      if (cmd[0] === "SET") {
+        if (cmd.includes("NX") && values.has(String(cmd[1]))) return null;
+        values.set(String(cmd[1]), Number(cmd[2]));
+        return "OK";
+      }
+      return null;
+    };
+    const fakeUpstash = vi.fn(async (url: string, init?: RequestInit) => {
+      const path = new URL(url).pathname;
+      const body = JSON.parse(String(init!.body)) as unknown;
+      calls.push({ path, body });
+      if (path === "/pipeline") return new Response(JSON.stringify((body as (string | number)[][]).map((c) => ({ result: run(c) }))));
+      return new Response(JSON.stringify({ result: run(body as (string | number)[]) }));
     });
     const store = upstashRateStore("https://example.upstash.io", "token", fakeUpstash as unknown as typeof fetch);
     const mk = () => new Relayer({ network: "testnet", registry: fakeRegistry({ keys: {}, used: 0, limit: 100, submitted: [] }), perIpPerHour: 1, powBits: 0, rateStore: store });
     // Two separate relayer instances (like two serverless instances) see the same count.
     expect((await mk().handle(signRegistration(generateKey(), "byline.testnet", {}), "7.7.7.7")).status).toBe(200);
     expect((await mk().handle(signRegistration(generateKey(), "byline.testnet", {}), "7.7.7.7")).status).toBe(429);
-    expect(calls).toContainEqual(["PEXPIRE", "byline:rate:ip:7.7.7.7", 3_600_000]);
+    // The counter gets its expiry in the same request as its first count.
+    expect(calls).toContainEqual({ path: "/pipeline", body: [["SET", "byline:rate:ip:7.7.7.7", "0", "PX", 3_600_000, "NX"], ["INCR", "byline:rate:ip:7.7.7.7"]] });
   });
 
   it("relayer: fails closed when the rate store is down", async () => {

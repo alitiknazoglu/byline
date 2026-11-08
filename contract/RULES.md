@@ -121,3 +121,15 @@ The registry contract lives at `byline.near` (mainnet) and `byline.testnet` (tes
 - **Whoever holds the registry account's full-access key can redeploy the contract,** and so change anything. Today that is the Byline team. Later the account should be locked (full-access key removed) or moved to a multisig.
 - **There is no reset.** The v1 → v2 move on testnet used a one-off `reset` that has since been removed from the code.
 - **Verified source:** mainnet builds use `cargo near build reproducible-wasm` (NEP-330 metadata, pinned SourceScan image), so NearBlocks can rebuild and verify the deployed code.
+
+## 14. Known issues for the next deploy (security review, 2026-11-09)
+
+None of these lets anyone take the registry's balance, move a byline or link an account without its consent. They're recorded here because fixing them needs a redeploy of the verified build, which the owner signs.
+
+- **Shared solvency margin (Low).** `register_signed` checks `free_balance >= SPONSOR_SEED + SOLVENCY_MARGIN` once, but each success callback then writes about 100 more bytes (`account_index` and `record.account`). Ten or more registrations in flight at once could share and exhaust the 0.01 NEAR margin; a callback that fails then leaves the byline `account_pending` forever with no repair path.
+  - *Mitigated off-chain now:* the relayer is the only caller of `register_signed`, and it submits one registration at a time across every instance (a shared lock in Upstash, released after the transaction is final).
+  - *Next deploy:* write `record.account` and `account_index` in `register_signed` itself so the success callback adds no storage, and the failure path removes them.
+- **Account names can be re-registered (Low).** Owners, payouts, invites and links are tied to account names. If a linked account or a builder's wallet is deleted and someone re-creates the name, the new holder inherits the link or the ownership. An invite to a name that doesn't exist yet can be front-run by whoever creates it. Builders can unlink or cancel invites; tools should warn before inviting an account that doesn't exist.
+- **Unlink refunds the builder's storage to the account (Info).** About 0.0003 NEAR per unlink goes to the unlinked account instead of the builder. The registry's own balance nets to zero.
+- **No migration path (Info).** `Contract` and `Record` aren't versioned and there's no `migrate`. Before the first schema change, make `Record` a versioned enum and add a `#[private] #[init(ignore_state)] migrate`.
+- **Stale key lookup and predictable codes (Info).** `get_byline_for_key` keeps answering for a key the agent has since rotated away. A victim's code can be predicted with about 2^40 hashes and squatted through `register` + `create_account`; the randomised fallback prevents lockout, and clients must read the code from `get_byline_for_key` after registering, never fund a predicted account (the SDK does this).

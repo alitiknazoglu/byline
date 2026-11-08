@@ -59,11 +59,16 @@ The server tells the model the flow on connect, so nobody has to remember tool n
 | `BYLINE_KEYS_DIR` | `~/.near-credentials` | Keys, near-cli layout. New agent keys are written here with mode 600. |
 | `BYLINE_STATE_DIR` | `~/.byline` | Remembers which byline this server acts as |
 | `BYLINE_RECORD` | unset | JSONL log the indexer counts (`data/byline-events.jsonl`) |
-| `BYLINE_ALLOW_LIVE` | unset | Must be `1` for mainnet swaps, payments and registrations |
+| `BYLINE_ALLOW_LIVE` | unset | Must be `1` for mainnet swaps, payments, registrations and links |
+| `BYLINE_MAX_SWAP` | `10` | Largest live swap, in units of the `from` token |
+| `BYLINE_MAX_PAY_RAW` | unset | Largest payment, in the token's smallest unit. Set it when `BYLINE_ALLOW_LIVE=1` |
 
 ## Safety
 
 - **Nothing moves by default.** Quotes are dry, and swaps need `confirm: true`, mainnet and `BYLINE_ALLOW_LIVE=1`.
+- **Spending is limited to the agent's own account.** `byline_pay` and `byline_swap` sign only as `<code>.<registry>`, never as the byline's owner, even when the owner's wallet key sits in the same keys directory. Live swaps are capped by `BYLINE_MAX_SWAP`, and payments by `BYLINE_MAX_PAY_RAW` when set.
+- **Linking needs both keys here.** `byline_link` needs the owner's key even when an invite already exists, so nobody can invite one of your accounts to their byline and have a tool call accept it.
+- **Chain text is labelled.** Memos, referrals and titles come back in their own `untrusted_*` fields or with a note to treat them as data.
 - **Spending tools are annotated `destructiveHint: true`,** so clients can ask before calling them and auditors don't fuzz them.
 - **Keys never pass through the model.** They're generated and read on disk, and only public information comes back.
 - **Inputs are strict and outputs are typed.** Unknown keys, wrong types and out-of-range values come back as clean `isError` results, never a crash or a silent accept.

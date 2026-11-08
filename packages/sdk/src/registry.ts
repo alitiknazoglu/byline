@@ -13,6 +13,12 @@ type Deposit = NonNullable<CallOptions["attachedDeposit"]>;
 const GAS_SMALL: Gas = "10 Tgas";
 const GAS_REGISTER: Gas = "30 Tgas";
 const GAS_ACCOUNT: Gas = "100 Tgas";
+/**
+ * register_signed: a real mainnet registration burned about 15 Tgas in all, and its callback is given 15 Tgas.
+ * The relayer's key pays for prepaid gas out of its allowance (unused gas isn't credited back to it), so
+ * attach what's needed with headroom, not 100 Tgas.
+ */
+const GAS_REGISTER_SIGNED: Gas = "50 Tgas";
 /** Attached to storage-paying calls. The contract keeps only the storage cost and refunds the rest. */
 const STORAGE_DEPOSIT: Deposit = "0.01 NEAR";
 /** Owner-only and unlink calls require exactly 1 yoctoNEAR, which forces a full-access key. */
@@ -152,7 +158,7 @@ export class Registry {
   async registerSigned(reg: SignedRegistration): Promise<string> {
     const outcome = await this.near
       .transaction(this.signerId ?? this.contractId)
-      .functionCall(this.contractId, "register_signed", reg, { gas: GAS_ACCOUNT })
+      .functionCall(this.contractId, "register_signed", reg, { gas: GAS_REGISTER_SIGNED })
       .send({ waitUntil: "FINAL" });
     const o = outcome as { transaction_outcome?: { id?: string }; transaction?: { hash?: string } };
     return o.transaction_outcome?.id ?? o.transaction?.hash ?? "";

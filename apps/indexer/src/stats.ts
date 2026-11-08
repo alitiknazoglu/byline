@@ -85,8 +85,9 @@ export interface BylineDetail {
   intentsBalances: { token_id: string; amount: string }[];
 }
 
-export function bylineDetail(db: DatabaseSync, network: NetworkId, name: string, limit = 50): BylineDetail | null {
-  const byline = leaderboard(db, network, "volume_usd", 10_000).find((r) => r.name === name);
+/** One byline's record. Pass its leaderboard `row` when you already have it (the snapshot does, for every byline). */
+export function bylineDetail(db: DatabaseSync, network: NetworkId, name: string, limit = 50, row?: LeaderboardRow): BylineDetail | null {
+  const byline = row ?? leaderboard(db, network, "volume_usd", 10_000).find((r) => r.name === name);
   if (!byline) return null;
   const all = (sql: string, ...args: (string | number)[]) => db.prepare(sql).all(...args) as Record<string, unknown>[];
   return {

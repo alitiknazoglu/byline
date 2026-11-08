@@ -98,10 +98,24 @@ function Banner() {
   );
 }
 
+/** Commands a link may run on page load: they only read and display. */
+const DEEP_LINK_SAFE = new Set(["show", "top", "quote", "verify", "help", "about", "mcp", "sponsor", "whoami", "use"]);
+
 /** The command a page path stands for: /agents/<code> → `show <code>`. The leaderboard already runs at boot. */
 function pathCommand(pathname: string): string | null {
-  const m = /^\/agents\/([^/]+)\/?$/.exec(pathname);
-  return m ? `show ${decodeURIComponent(m[1]!)}` : null;
+  const m = /^\/agents\/([0-9a-z]+)\/?$/.exec(pathname);
+  return m ? `show ${m[1]!}` : null;
+}
+
+/** The command a link asks for: a page path (/agents/<code>) or the older hash links (#show/<code>). */
+function deepLinkCommand(): string {
+  let hash = "";
+  try {
+    hash = decodeURIComponent(window.location.hash.replace(/^#\/?/, ""));
+  } catch {
+    hash = ""; // a malformed escape (/#%) is ignored, not a blank page
+  }
+  return (pathCommand(window.location.pathname) ?? hash).replace(/\//g, " ").replace(/\s+/g, " ").trim();
 }
 
 const lastLogin = () =>
@@ -271,11 +285,13 @@ export function Terminal() {
     push({ out: <Banner /> });
     run("about", { record: false, boot: true });
     run("top", { record: false, boot: true });
-    const deep = (pathCommand(window.location.pathname) ?? decodeURIComponent(window.location.hash.replace(/^#\/?/, "")))
-      .replace(/\//g, " ")
-      .trim();
-    if (deep && COMMAND_NAMES.includes(deep.split(" ")[0]!))
-      run(deep, { record: false });
+    const deep = deepLinkCommand();
+    if (deep && COMMAND_NAMES.includes(deep.split(" ")[0]!)) {
+      // A link may only show things. Anything that signs, pays, downloads a key or changes the wallet is
+      // typed into the prompt for the reader to run (without --yes), never run on load.
+      if (DEEP_LINK_SAFE.has(deep.split(" ")[0]!)) run(deep, { record: false });
+      else setInput(deep.replace(/(^|\s)--yes(?=\s|$)/g, "").trim());
+    }
     void loadSnapshot(NETWORK).then((s) => s && setIndexedAt(s.generatedAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

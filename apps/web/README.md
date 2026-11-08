@@ -42,7 +42,7 @@ The terminal needs JavaScript, so every page also ships static HTML that crawler
 | `/llms.txt`, `/llms-full.txt` | the index for AI agents and the full manual | `public/` |
 | `/robots.txt`, `/sitemap.xml` | crawler policy (AI crawlers allowed) and the indexable pages | `public/`, `scripts/prerender.mjs` |
 
-`npm run build` runs the prerender after Vite, from `public/data/mainnet.json`, so re-export the snapshot and rebuild to refresh these pages. On Vercel, `cleanUrls` serves `/docs`, `/leaderboard` and `/agents/<code>` from their `.html` files; an agent newer than the build falls back to the terminal. testnet.by-line.xyz answers every request with `X-Robots-Tag: noindex`, and a request for `/` that asks for `text/markdown` gets `/llms.txt`.
+`npm run build` runs the prerender after Vite, from `public/data/mainnet.json`, so re-export the snapshot and rebuild to refresh these pages. On Vercel, `cleanUrls` serves `/docs`, `/leaderboard` and `/agents/<code>` from their `.html` files; an agent newer than the build falls back to the terminal. testnet.by-line.xyz answers every request with `X-Robots-Tag: noindex`. Every response carries `frame-ancestors 'none'`, `X-Frame-Options: DENY`, `nosniff`, a referrer policy and a permissions policy.
 
 ## Where the data comes from
 

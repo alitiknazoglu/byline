@@ -102,6 +102,8 @@ export function assertQuoteMatches(request: QuoteRequest, response: QuoteRespons
   if (echoed.refundTo !== request.refundTo) problems.push(`refundTo ${echoed.refundTo} ≠ ${request.refundTo}`);
   if (request.referral && echoed.referral !== request.referral) problems.push(`referral ${echoed.referral} ≠ ${request.referral}`);
   if (echoed.originAsset !== request.originAsset) problems.push(`originAsset ${echoed.originAsset} ≠ ${request.originAsset}`);
+  if (echoed.destinationAsset !== request.destinationAsset) problems.push(`destinationAsset ${echoed.destinationAsset} ≠ ${request.destinationAsset}`);
+  if (echoed.dry !== request.dry) problems.push(`dry ${echoed.dry} ≠ ${request.dry}`);
   if (request.swapType === "EXACT_INPUT" && response.quote.amountIn !== request.amount) {
     problems.push(`amountIn ${response.quote.amountIn} ≠ requested ${request.amount}`);
   }

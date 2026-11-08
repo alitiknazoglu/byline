@@ -113,6 +113,8 @@ export class FastNear {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
+        // A hung upstream can't hold the indexer past its time budget.
+        signal: AbortSignal.timeout(20_000),
       });
       if (res.ok) return (await res.json()) as T;
       if ((res.status === 429 || res.status >= 500) && attempt < this.retries) {

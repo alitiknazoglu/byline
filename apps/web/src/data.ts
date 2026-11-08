@@ -151,6 +151,8 @@ export function formatAmount(raw: string | null | undefined, tokenId: string | n
   if (!raw) return "—";
   const t = tokenId ? TOKENS[tokenId] : undefined;
   if (!t) return raw;
+  // Amounts come from transaction args: a malformed one is shown as-is rather than breaking the page.
+  if (!/^\d{1,40}$/.test(raw)) return raw.slice(0, 40);
   const v = Number(BigInt(raw) / 10n ** BigInt(Math.max(0, t.decimals - 6))) / 1e6;
   return `${v.toLocaleString("en-US", { maximumFractionDigits: maxFrac })} ${t.symbol}`;
 }

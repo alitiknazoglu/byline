@@ -91,6 +91,34 @@ export function parseTx(t: FastTransaction): ParsedTx {
   };
 }
 
+const AMOUNT = /^\d{1,40}$/;
+const ACCOUNT = /^(?=.{2,64}$)(([a-z\d]+[-_])*[a-z\d]+\.)*([a-z\d]+[-_])*[a-z\d]+$/;
+const MAX_MEMO = 256;
+
+/**
+ * Did the token contract itself record moving `amount` to `receiver`? Either as a NEP-141 event
+ * (`EVENT_JSON:{"standard":"nep141","event":"ft_transfer",...}`) or as the older plain log that
+ * wrap.near / wrap.testnet write (`Transfer <amount> from <sender> to <receiver>`). Args alone prove
+ * nothing: a call can name any receiver and amount and move no tokens.
+ */
+function tokenLogged(t: FastTransaction, token: string, receiver: string, amount: string): boolean {
+  for (const r of t.receipts) {
+    const o = r.execution_outcome.outcome;
+    if (o.executor_id !== token || isFailure(o.status)) continue;
+    for (const log of o.logs) {
+      if (log === `Transfer ${amount} from ${t.transaction.signer_id} to ${receiver}`) return true;
+      if (!log.startsWith("EVENT_JSON:")) continue;
+      try {
+        const ev = JSON.parse(log.slice("EVENT_JSON:".length)) as { standard?: string; event?: string; data?: { new_owner_id?: string; amount?: string }[] };
+        if (ev.standard === "nep141" && ev.event === "ft_transfer" && ev.data?.some((d) => d.new_owner_id === receiver && d.amount === amount)) return true;
+      } catch {
+        /* not an event */
+      }
+    }
+  }
+  return false;
+}
+
 /**
  * NEP-141 transfers in this transaction whose memo credits a byline.
  * Read from the signed actions themselves (`ft_transfer` / `ft_transfer_call` args), so the
@@ -109,16 +137,20 @@ export function parseMemoTransfers(t: FastTransaction): ParsedMemoTransfer[] {
     const memo = typeof args?.memo === "string" ? args.memo : null;
     const name = parseBylineMemo(memo);
     if (!name || !args) return;
+    // Values come from whoever signed the call: keep only well-formed ones, and keep them short.
+    const receiver = typeof args.receiver_id === "string" ? args.receiver_id : "";
+    const amount = typeof args.amount === "string" ? args.amount : "";
+    if (!ACCOUNT.test(receiver) || !AMOUNT.test(amount)) return;
     out.push({
       txHash: t.transaction.hash,
       actionIndex: i,
       name,
       token: t.transaction.receiver_id,
       sender: t.transaction.signer_id,
-      receiver: String(args.receiver_id ?? ""),
-      amount: String(args.amount ?? "0"),
-      memo: memo!,
-      success,
+      receiver,
+      amount,
+      memo: memo!.length > MAX_MEMO ? memo!.slice(0, MAX_MEMO) : memo!,
+      success: success && tokenLogged(t, t.transaction.receiver_id, receiver, amount),
       blockTsMs: nsToMs(t.execution_outcome.block_timestamp),
     });
   });

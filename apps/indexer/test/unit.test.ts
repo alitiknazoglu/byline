@@ -57,6 +57,24 @@ describe("parse (real testnet transactions)", () => {
     ]);
   });
 
+  it("credits a memo only if the token contract logged the transfer, and drops malformed args", () => {
+    // Same transaction, but the token contract logged nothing: args alone move no tokens, so nothing is credited.
+    const silent = structuredClone(tx("Aq3o"));
+    for (const r of silent.receipts) r.execution_outcome.outcome.logs = [];
+    expect(parseMemoTransfers(silent)).toEqual([expect.objectContaining({ name: CODE, success: false })]);
+    // Args that aren't a real amount or account are skipped, not stored (they'd break pages or inflate counts).
+    const forged = structuredClone(tx("Aq3o"));
+    const action = (forged.transaction.actions as unknown as { FunctionCall: { args: string } }[])[0]!;
+    const args = JSON.parse(Buffer.from(action.FunctionCall.args, "base64").toString());
+    for (const bad of [{ ...args, amount: "x" }, { ...args, receiver_id: "Not An Account" }]) {
+      action.FunctionCall.args = Buffer.from(JSON.stringify(bad)).toString("base64");
+      expect(parseMemoTransfers(forged)).toEqual([]);
+    }
+    // A long memo is kept short.
+    action.FunctionCall.args = Buffer.from(JSON.stringify({ ...args, memo: `byline:${CODE} ${"x".repeat(5000)}` })).toString("base64");
+    expect(parseMemoTransfers(forged)[0]!.memo.length).toBe(256);
+  });
+
   it("marks the refused NFT transfer as failed and finds no memo", () => {
     expect(parseTx(tx("8J3P")).success).toBe(false);
     expect(parseMemoTransfers(tx("8J3P"))).toEqual([]);

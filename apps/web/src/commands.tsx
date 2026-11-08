@@ -1,6 +1,6 @@
 /** Every command the terminal understands. Each returns what it prints. */
 import type { ReactNode } from "react";
-import { Near, generateKey } from "near-kit";
+import { Near, generateKey, isValidAccountId } from "near-kit";
 import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@bylinecode/sdk";
 import { FastNear, parseMemoTransfers, parseTx } from "@bylinecode/indexer/chain";
 import { accountUrl, ago, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
@@ -526,6 +526,8 @@ export const COMMANDS: Record<string, Command> = {
       const record = await readRegistry.getByline(code);
       if (!record) throw new Error(`no byline ${code} on ${REGISTRY}`);
       const to = str(flags.to) ?? record.account ?? record.owner;
+      // Checked, so the preview and the command it offers can't disagree about who gets paid.
+      if (!isValidAccountId(to)) throw new Error(`--to must be a NEAR account id, got "${to}"`);
       const memo = `byline:${code} demo`;
 
       if (!wallet.accountId || !wallet.near) {
@@ -770,7 +772,8 @@ export const COMMANDS: Record<string, Command> = {
       if (!record) throw new Error(`no byline ${code} on ${REGISTRY}`);
       if (record.owner !== wallet.accountId) throw new Error(`${code} belongs to ${record.owner}, not ${wallet.accountId}`);
       if (record.account) throw new Error(`${code} already has its account: ${record.account}`);
-      const key = flags.download && pending ? pending : generateKey();
+      // Reuse the key this tab already saved: a second run must not swap in a key the user doesn't hold.
+      const key = pending ?? generateKey();
       pendingKeys.set(code, key);
       downloadKey(accountId, key);
       return (

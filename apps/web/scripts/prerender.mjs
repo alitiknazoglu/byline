@@ -66,8 +66,9 @@ function head({ title, description, path, robots, jsonld }) {
 
 function page(opts, body) {
   const out = template
-    .replace(/<!--seo[\s\S]*?<!--\/seo-->/, `<!--seo-->\n    ${head(opts)}\n    <!--/seo-->`)
-    .replace(/<!--fallback-->[\s\S]*?<!--\/fallback-->/, `<!--fallback-->\n      <main class="static">\n${body}\n      </main>\n    <!--/fallback-->`);
+    // Replacement functions, not strings: a title containing $` or $' must stay literal text.
+    .replace(/<!--seo[\s\S]*?<!--\/seo-->/, () => `<!--seo-->\n    ${head(opts)}\n    <!--/seo-->`)
+    .replace(/<!--fallback-->[\s\S]*?<!--\/fallback-->/, () => `<!--fallback-->\n      <main class="static">\n${body}\n      </main>\n    <!--/fallback-->`);
   const file = join(DIST, `${opts.path.slice(1)}.html`);
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, out);

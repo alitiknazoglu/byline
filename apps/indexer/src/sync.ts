@@ -33,6 +33,15 @@ export interface SyncContext {
   log: (msg: string) => void;
   /** Pause between rate-limited calls. Overridable in tests. */
   sleep: (ms: number) => Promise<void>;
+  /** Epoch ms after which the slow steps stop early (the snapshot API has a hard time limit). */
+  deadline?: number;
+}
+
+/** True once the time budget is spent: loops stop and the snapshot is built from what's in. */
+function outOfTime(ctx: SyncContext, step: string): boolean {
+  if (ctx.deadline === undefined || Date.now() < ctx.deadline) return false;
+  ctx.log(`${step}: out of time, stopping early`);
+  return true;
 }
 
 export function createContext(opts: {
@@ -41,6 +50,7 @@ export function createContext(opts: {
   explorerJwt?: string;
   oneClickJwt?: string;
   log?: (msg: string) => void;
+  deadline?: number;
 }): SyncContext {
   const mainnet = new Near(nearConfig("mainnet"));
   return {
@@ -54,6 +64,7 @@ export function createContext(opts: {
     fetch: globalThis.fetch.bind(globalThis),
     log: opts.log ?? (() => {}),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
+    deadline: opts.deadline,
   };
 }
 
@@ -122,6 +133,7 @@ export async function syncActivity(db: DatabaseSync, ctx: SyncContext): Promise<
   let txCount = 0;
   let memoCount = 0;
   for (const { account_id, name } of accounts) {
+    if (outOfTime(ctx, "activity")) break;
     // v2: also reads memo payments others sent (the v1 cursor only looked at what the agent signed).
     const key = `activity2:${ctx.network}:${account_id}`;
     const since = Number(getCursor(db, key) ?? 0);
@@ -261,6 +273,9 @@ const DEPOSIT_ADDRESS = /^[0-9a-f]{64}$/;
  * own record carries this byline's code as the referral.
  */
 export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promise<number> {
+  // 1Click settles on mainnet only. A testnet byline whose code happens to match a mainnet referral must not
+  // borrow that swap's volume.
+  if (ctx.network !== "mainnet") return 0;
   const candidates = db
     .prepare(
       `SELECT m.tx_hash, m.name, m.sender, m.receiver, m.token, m.amount, m.block_ts_ms
@@ -277,6 +292,7 @@ export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promis
   const payoutOf = db.prepare("SELECT payout FROM bylines WHERE network = ? AND name = ?");
   let found = 0;
   for (const c of candidates.filter((x) => DEPOSIT_ADDRESS.test(x.receiver))) {
+    if (outOfTime(ctx, "chain swaps")) break;
     const checkedKey = `chainswap:${ctx.network}:${c.receiver}`;
     if (getCursor(db, checkedKey) === "not-1click") continue;
     let s;
@@ -289,6 +305,12 @@ export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promis
       continue;
     }
     const req = s.quoteResponse?.quoteRequest;
+    // The deposit must be the swap's own origin token, not any transfer to the deposit address.
+    if (req && req.originAsset !== `nep141:${c.token}`) {
+      ctx.log(`chain swaps: ${c.receiver} expects ${req.originAsset}, got ${c.token}; not credited`);
+      setCursor(db, checkedKey, "not-1click");
+      continue;
+    }
     if (!req || req.referral !== c.name) {
       ctx.log(`chain swaps: ${c.receiver} referral is ${req?.referral ?? "none"}, not ${c.name}; not credited`);
       setCursor(db, checkedKey, "not-1click");
@@ -298,7 +320,7 @@ export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promis
     const d = (s.swapDetails ?? {}) as Record<string, unknown>;
     const num = (v: unknown) => (v === undefined || v === null || v === "" ? null : Number(v));
     const payout = (payoutOf.get(ctx.network, c.name) as { payout: string | null } | undefined)?.payout ?? null;
-    const appFees = req.appFees ?? [];
+    const appFees = Array.isArray(req.appFees) ? req.appFees.filter((f) => f && typeof f.recipient === "string" && Number.isFinite(f.fee)) : [];
     const builderBps = appFees.filter((f) => f.recipient === payout).reduce((n, f) => n + f.fee, 0);
     const at = new Date(c.block_ts_ms).toISOString();
     found += Number(
@@ -327,6 +349,7 @@ export async function syncSwapStatus(db: DatabaseSync, ctx: SyncContext): Promis
       amount_in_usd = COALESCE(?, amount_in_usd), amount_out_usd = COALESCE(?, amount_out_usd),
       refund_reason = COALESCE(?, refund_reason), updated_at = ? WHERE deposit_address = ?`);
   for (const { deposit_address } of open) {
+    if (outOfTime(ctx, "swap status")) break;
     try {
       const s = await ctx.oneClick.status(deposit_address);
       const d = (s.swapDetails ?? {}) as Record<string, unknown>;
@@ -389,6 +412,7 @@ export async function syncExplorer(db: DatabaseSync, ctx: SyncContext): Promise<
       app_fees=excluded.app_fees, refund_reason=excluded.refund_reason, updated_at=excluded.updated_at`);
   let n = 0;
   for (const b of bylines) {
+    if (outOfTime(ctx, "explorer")) break;
     let last: string | undefined;
     for (let page = 0; page < 50; page++) {
       const q = new URLSearchParams({ referral: b.name, numberOfTransactions: "1000" });
@@ -402,7 +426,7 @@ export async function syncExplorer(db: DatabaseSync, ctx: SyncContext): Promise<
       tx(db, () => {
         for (const r of rows) {
           // The builder's real share is whatever 1Click recorded for the payout.
-          const bps = (r.appFees ?? []).filter((f) => f.recipient === b.payout).reduce((sum, f) => sum + f.fee, 0);
+          const bps = (Array.isArray(r.appFees) ? r.appFees : []).filter((f) => f.recipient === b.payout).reduce((sum, f) => sum + f.fee, 0);
           upsert.run(
             r.depositAddress, b.name, r.status, r.originAsset, r.destinationAsset, r.amountIn, r.amountOut, Number(r.amountInUsd) || null,
             Number(r.amountOutUsd) || null, bps, JSON.stringify(r.appFees ?? []), r.nearTxHashes?.[0] ?? null, r.senders?.[0] ?? null,
@@ -427,6 +451,7 @@ export async function syncIntentsBalances(db: DatabaseSync, ctx: SyncContext): P
   const payouts = (db.prepare("SELECT DISTINCT payout FROM bylines WHERE payout IS NOT NULL AND source != 'fixture'").all() as { payout: string }[]).map((r) => r.payout);
   let n = 0;
   for (const payout of payouts) {
+    if (outOfTime(ctx, "intents balances")) break;
     if (!(await ctx.payoutChecker.canReceive(payout))) continue;
     const tokenIds: string[] = [];
     for (let from = 0; ; from += 100) {

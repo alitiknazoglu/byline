@@ -90,7 +90,9 @@ describe("byline MCP server", () => {
   it("byline_verify credits the agent's memo payment and not a failed registry tx", async () => {
     const yes = await call("byline_verify", { tx_hash: MEMO_TX });
     expect(yes.structuredContent).toMatchObject({ code: CODE, credited: true, signer: AGENT });
-    expect(yes.structuredContent!.reasons.join(" ")).toMatch(/memo "byline:nw5s2ea1 dca-fee"/);
+    expect(yes.structuredContent!.reasons.join(" ")).toMatch(/memo credits nw5s2ea1/);
+    // The memo text itself comes back only in its own field, marked untrusted.
+    expect(yes.structuredContent!.untrusted_memos).toContain("byline:nw5s2ea1 dca-fee");
     const no = await call("byline_verify", { tx_hash: FAILED_TX });
     expect(no.structuredContent).toMatchObject({ credited: false, signer: "byline.testnet" });
     // An unknown deposit address is an answer ("not credited"), not an error; each input is checked on its own.

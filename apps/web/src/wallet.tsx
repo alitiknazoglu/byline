@@ -19,10 +19,16 @@ export interface WalletState {
 
 const Ctx = createContext<WalletState | null>(null);
 
+/**
+ * The list of wallets (and where their code is loaded from), pinned to a reviewed commit instead of the
+ * library's default, which follows a moving branch. Bump it on purpose when wallets change.
+ */
+const WALLET_MANIFEST = "https://raw.githubusercontent.com/hot-dao/near-selector/b57880c29ab142f777c4a851e3c3c23752292be8/repository/manifest.json";
+
 /** The wallet library loads on its own, after the page: most visitors never connect. */
 let connector: Promise<NearConnector> | null = null;
 function getConnector(): Promise<NearConnector> {
-  connector ??= import("@hot-labs/near-connect").then(({ NearConnector }) => new NearConnector({ network: WALLET_NETWORK, footerBranding: null }));
+  connector ??= import("@hot-labs/near-connect").then(({ NearConnector }) => new NearConnector({ network: WALLET_NETWORK, footerBranding: null, manifest: WALLET_MANIFEST }));
   return connector;
 }
 

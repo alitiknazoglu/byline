@@ -2,7 +2,7 @@
 import { access, appendFile, mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { generateKey, Near, parseKey } from "near-kit";
+import { generateKey, isValidAccountId, Near, parseKey } from "near-kit";
 import { createByline, type CreateBylineOptions, type CreatedByline } from "./onboard.js";
 import { FileKeyStore } from "near-kit/keys/file";
 import { nearConfig, type NetworkId, type Recorder } from "./types.js";
@@ -73,6 +73,8 @@ export async function createAgentByline(
   }
 
   const created = await createByline({ ...opts, keyPair });
+  // The account name becomes a file name: never let it leave the keys directory.
+  if (!isValidAccountId(created.accountId) || created.accountId.includes("/")) throw new Error(`Refusing to save a key for an invalid account id: ${created.accountId}`);
   const finalPath = join(dir, `${created.accountId}.json`);
   if (keyFile !== finalPath) {
     const taken = await access(finalPath).then(() => true, () => false);

@@ -131,6 +131,15 @@ CREATE TABLE IF NOT EXISTS intents_balances (
   PRIMARY KEY (payout, token_id)
 );
 
+-- Per-byline lookups: the leaderboard and each detail filter on these.
+CREATE INDEX IF NOT EXISTS txs_by_name ON txs (network, name);
+CREATE INDEX IF NOT EXISTS memo_transfers_by_name ON memo_transfers (network, name);
+CREATE INDEX IF NOT EXISTS memo_transfers_by_receiver ON memo_transfers (receiver);
+CREATE INDEX IF NOT EXISTS swaps_by_name ON swaps (name);
+CREATE INDEX IF NOT EXISTS accounts_by_name ON accounts (network, name);
+CREATE INDEX IF NOT EXISTS registry_events_by_name ON registry_events (network, name);
+CREATE INDEX IF NOT EXISTS quotes_by_name ON quotes (name);
+
 CREATE TABLE IF NOT EXISTS cursors (
   key TEXT PRIMARY KEY,
   value TEXT NOT NULL

@@ -19,6 +19,17 @@ export interface Config {
   allowLive: boolean;
   /** Optional JSONL log the indexer reads (same format as the SDK recorder). */
   recordPath?: string;
+  /** Largest live swap, in human units of the `from` token (BYLINE_MAX_SWAP, default 10). */
+  maxSwap: number;
+  /** Largest payment in the token's smallest unit (BYLINE_MAX_PAY_RAW). Unset: no cap beyond the account's balance. */
+  maxPayRaw?: bigint;
+}
+
+function positiveNumber(name: string, raw: string | undefined, fallback: number): number {
+  if (raw === undefined || raw === "") return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) throw new Error(`${name} must be a positive number, got ${raw}`);
+  return n;
 }
 
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
@@ -32,6 +43,10 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     stateDir: env.BYLINE_STATE_DIR || join(homedir(), ".byline"),
     allowLive: env.BYLINE_ALLOW_LIVE === "1",
     recordPath: env.BYLINE_RECORD || undefined,
+    maxSwap: positiveNumber("BYLINE_MAX_SWAP", env.BYLINE_MAX_SWAP, 10),
+    maxPayRaw: env.BYLINE_MAX_PAY_RAW ? (/^[1-9]\d*$/.test(env.BYLINE_MAX_PAY_RAW) ? BigInt(env.BYLINE_MAX_PAY_RAW) : (() => {
+      throw new Error(`BYLINE_MAX_PAY_RAW must be a positive integer, got ${env.BYLINE_MAX_PAY_RAW}`);
+    })()) : undefined,
   };
 }
 
@@ -104,11 +119,15 @@ export class Context {
     return record;
   }
 
-  /** A Byline client for `code`, signing as its own account when this machine holds the key. Reused across calls. */
+  /**
+   * A Byline client for `code`, signing as the byline's own agent account (`<code>.<registry>`) when this
+   * machine holds its key. Never as the owner: a byline registered from a wallet has no agent account, and
+   * the owner's wallet (whose key may sit in the same keys directory) must not be spendable by a tool call.
+   */
   async byline(code: string): Promise<{ byline: Byline; accountId: string; canSign: boolean }> {
     const record = await this.record(code);
     const accountId = record.account ?? record.owner;
-    const canSign = this.hasKey(accountId);
+    const canSign = record.account !== null && record.account !== undefined && this.hasKey(record.account);
     const cached = this.bylines.get(code);
     if (cached && cached.accountId === accountId && cached.canSign === canSign) return cached;
     const byline = new Byline({
