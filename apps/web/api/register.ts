@@ -67,7 +67,8 @@ const json = (status: number, body: unknown, request?: Request) => {
     headers["access-control-allow-origin"] = origin;
     headers["access-control-allow-headers"] = "content-type";
   }
-  return new Response(JSON.stringify(body), { status, headers });
+  // 204 can't carry a body (the Response constructor throws), so a preflight answers with none.
+  return new Response(status === 204 ? null : JSON.stringify(body), { status, headers });
 };
 
 export function OPTIONS(request: Request) {
