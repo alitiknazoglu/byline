@@ -1,0 +1,25 @@
+{
+  "request": {
+    "dry": true,
+    "swapType": "EXACT_INPUT",
+    "slippageTolerance": 100,
+    "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    "depositType": "ORIGIN_CHAIN",
+    "destinationAsset": "nep141:wrap.near",
+    "amount": "1000000",
+    "recipient": "aurora",
+    "recipientType": "DESTINATION_CHAIN",
+    "refundTo": "aurora",
+    "refundType": "ORIGIN_CHAIN",
+    "deadline": "2026-11-07T21:57:57.140Z",
+    "referral": "Bad Code!"
+  },
+  "status": 400,
+  "response": {
+    "message": "Referral must be lowercase letters and digits joined by single \"-\", \"_\" or \".\"",
+    "error": "Bad Request",
+    "statusCode": 400,
+    "timestamp": "2026-11-07T21:48:00.382Z",
+    "path": "/v0/quote"
+  }
+}

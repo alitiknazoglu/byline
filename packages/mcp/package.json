@@ -1,0 +1,35 @@
+{
+  "name": "@bylinecode/mcp",
+  "version": "0.1.0",
+  "description": "MCP server for Byline: lets AI agents create their on-chain identity on NEAR, get credited quotes, pay with attribution, and verify their activity.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "byline-mcp": "./dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/index.js",
+    "test": "vitest run test/server.test.ts"
+  },
+  "dependencies": {
+    "@bylinecode/indexer": "0.1.0",
+    "@bylinecode/sdk": "0.1.0",
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "near-kit": "0.20.2",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "mcprobe": "github:alitiknazoglu/mcprobe#641b1f08e94c807ddb36778431a45b589b2455c4",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

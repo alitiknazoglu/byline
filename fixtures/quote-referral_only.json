@@ -1,0 +1,61 @@
+{
+  "request": {
+    "dry": true,
+    "swapType": "EXACT_INPUT",
+    "slippageTolerance": 100,
+    "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+    "depositType": "ORIGIN_CHAIN",
+    "destinationAsset": "nep141:wrap.near",
+    "amount": "1000000",
+    "recipient": "aurora",
+    "recipientType": "DESTINATION_CHAIN",
+    "refundTo": "aurora",
+    "refundType": "ORIGIN_CHAIN",
+    "deadline": "2026-11-07T21:57:57.140Z",
+    "referral": "demo-agent-1"
+  },
+  "status": 201,
+  "response": {
+    "quote": {
+      "amountIn": "1000000",
+      "amountInFormatted": "1.0",
+      "amountInUsd": "0.999654000000",
+      "minAmountIn": "1000000",
+      "amountOut": "273736306757924999999999",
+      "amountOutFormatted": "0.273736306757924999999999",
+      "amountOutUsd": "0.996400156599",
+      "minAmountOut": "270998943690345749999999",
+      "timeEstimate": 22,
+      "refundFee": "0",
+      "withdrawFee": "0"
+    },
+    "quoteRequest": {
+      "dry": true,
+      "depositMode": "SIMPLE",
+      "swapType": "EXACT_INPUT",
+      "slippageTolerance": 100,
+      "originAsset": "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1",
+      "depositType": "ORIGIN_CHAIN",
+      "destinationAsset": "nep141:wrap.near",
+      "amount": "1000000",
+      "refundTo": "aurora",
+      "refundType": "ORIGIN_CHAIN",
+      "recipient": "aurora",
+      "recipientType": "DESTINATION_CHAIN",
+      "deadline": "2026-11-07T21:57:57.140Z",
+      "confidentiality": "public",
+      "referral": "demo-agent-1",
+      "quoteWaitingTimeMs": 0,
+      "insured": false,
+      "appFees": [
+        {
+          "recipient": "5880ad2b362620fadf759cbceb1cd5737ce8c6ed7fb8e9942881e6731f9247dd",
+          "fee": 20
+        }
+      ]
+    },
+    "signature": "ed25519:3rdR7pzuacse2SMYSjfqFW94JwpLkGhe2ejP6bengXeGs6Qp4tdV4zEEppfxh6fPoNXi8YfpxW1CLNYKnU5A5hwx",
+    "timestamp": "2026-11-07T21:47:58.132Z",
+    "correlationId": "ad748a63-afe4-4889-a5ab-a37dbd55ed24"
+  }
+}

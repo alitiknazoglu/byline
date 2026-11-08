@@ -1,0 +1,30 @@
+{
+  "name": "@bylinecode/web",
+  "version": "0.1.0",
+  "private": true,
+  "description": "by-line.xyz: the Byline leaderboard, byline records, live dry quotes and registration.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.json --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@bylinecode/sdk": "0.1.0",
+    "@fontsource-variable/jetbrains-mono": "5.3.0",
+    "@hot-labs/near-connect": "0.11.4",
+    "lucide-react": "1.61.0",
+    "near-kit": "0.20.2",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "@bylinecode/indexer": "0.1.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.1.2",
+    "typescript": "5.9.3",
+    "vite": "8.3.5"
+  }
+}

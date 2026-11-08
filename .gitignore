@@ -1,0 +1,17 @@
+node_modules/
+dist/
+target/
+.env
+.env.*
+!.env.example
+*.sqlite
+*.db
+.DS_Store
+.near-credentials/
+/data/
+apps/web/.impeccable/review/
+apps/web/.impeccable/questions/
+
+# Local agent tooling (third-party skills), not part of Byline
+.claude/
+skills-lock.json

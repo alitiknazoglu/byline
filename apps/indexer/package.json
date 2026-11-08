@@ -1,0 +1,42 @@
+{
+  "name": "@bylinecode/indexer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Counts what each byline's agent contributed: swaps, transactions, memo payments, fees.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./chain": {
+      "types": "./dist/chain.d.ts",
+      "default": "./dist/chain.js"
+    }
+  },
+  "bin": {
+    "byline-indexer": "./dist/cli.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run test/unit.test.ts",
+    "test:live": "vitest run test/live.test.ts",
+    "cli": "node --disable-warning=ExperimentalWarning dist/cli.js"
+  },
+  "dependencies": {
+    "@bylinecode/sdk": "0.1.0",
+    "near-kit": "0.20.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

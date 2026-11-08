@@ -1,0 +1,44 @@
+{
+  "name": "@bylinecode/sdk",
+  "version": "0.1.0",
+  "description": "Give your AI agent a byline on NEAR: credit every swap, payment and transaction to the agent and its builder.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./node": {
+      "types": "./dist/node.d.ts",
+      "default": "./dist/node.js"
+    },
+    "./relay": {
+      "types": "./dist/relay.d.ts",
+      "default": "./dist/relay.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run test/unit.test.ts",
+    "test:live": "vitest run test/live.test.ts"
+  },
+  "dependencies": {
+    "near-kit": "0.20.2",
+    "@noble/hashes": "2.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

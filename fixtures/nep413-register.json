@@ -1,0 +1,46 @@
+{
+  "note": "Signed by scripts/make-nep413-fixture.mjs with throwaway keys whose private halves were discarded.",
+  "expires_at_ms": 4102444800000,
+  "agent_a": {
+    "recipient": "byline.testnet",
+    "public_key": "ed25519:G42ivLtRkKWrvmyxAXRztZ3vwafuPvGJ8VH4N5b4ubZo",
+    "message": "{\"action\":\"register\",\"expires_at_ms\":4102444800000,\"title\":\"Fixture agent A\"}",
+    "nonce": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "signature": "sz/wI4TjWZYHdULzHF4FP9zzb1Z54JDT01twzzgM7x6OOEXXt9rm3SckcHc/lICnePhJtPnYUiLzj0qEMSdnDg==",
+    "expected_code": "veph16wc"
+  },
+  "agent_a_with_payout": {
+    "recipient": "byline.testnet",
+    "public_key": "ed25519:G42ivLtRkKWrvmyxAXRztZ3vwafuPvGJ8VH4N5b4ubZo",
+    "message": "{\"action\":\"register\",\"expires_at_ms\":4102444800000,\"payout\":\"alice.near\",\"fee_bps\":30}",
+    "nonce": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "signature": "mAVvtxbOKqNH7+is9qWxf6kDfL87kIPOi7PApQKBsJDalyjOjR5NZpvhTCDkbZ4ZtRkcThN/tUmqdYkMyIcvBg==",
+    "expected_code": "veph16wc"
+  },
+  "agent_b": {
+    "recipient": "byline.testnet",
+    "public_key": "ed25519:3KZNkZ1cSCkCDaXHsMzTrtrvxMG7NYmummT8jLmZ8oE6",
+    "message": "{\"action\":\"register\",\"expires_at_ms\":4102444800000}",
+    "nonce": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "signature": "HgONT9Z3tcYAjVdSqqLULhqLI2zCKmPAtBCx4pcxSy8jlMWW2oZUauWOyRqihUrRs6O6BwMlRsjkoawHXQMvDw==",
+    "expected_code": "601b2wch"
+  },
+  "wrong_recipient": {
+    "recipient": "someone-else.testnet",
+    "public_key": "ed25519:G42ivLtRkKWrvmyxAXRztZ3vwafuPvGJ8VH4N5b4ubZo",
+    "message": "{\"action\":\"register\",\"expires_at_ms\":4102444800000}",
+    "nonce": "AQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyA=",
+    "signature": "qEFGkb7ARIe0FYR/O1/qva7RixbwHw9Er5KYnetjJ9spuG1+7BR7F4mS4mZcgif0K+9gt1AGhp6wKzyLlNFfDw==",
+    "expected_code": "veph16wc"
+  },
+  "wrong_action": {
+    "public_key": "ed25519:G42ivLtRkKWrvmyxAXRztZ3vwafuPvGJ8VH4N5b4ubZo",
+    "message": "{\"action\":\"update\",\"expires_at_ms\":4102444800000}",
+    "nonce": "CQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQkJCQk=",
+    "signature": "JJYjCeVpZT3MCx2bIsHR41R9nbNtPUVtwoidgXuPjzXsHAJLk+qso0wTU8Oly57JDPxfAL93bSOA4qoDAT+WAQ=="
+  },
+  "tx_path_codes": {
+    "alice.near:0": "wfk06y1r",
+    "alice.near:1": "3ws0fbxe"
+  }
+}
