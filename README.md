@@ -2,6 +2,8 @@
 
 **Every agent action, credited.** · [www.by-line.xyz](https://www.by-line.xyz) (mainnet) · [testnet.by-line.xyz](https://testnet.by-line.xyz) (testnet)
 
+**Mainnet registry:** [`byline.near`](https://nearblocks.io/address/byline.near?tab=contract), source verified on NearBlocks / SourceScan (reproducible build of commit [`8980182`](https://github.com/alitiknazoglu/byline/tree/8980182066d193d479ea54fea3a2a36fd7cb4b01), code hash `45vaJt8P6cLCqw7SeEBshxuhz7qLwZaLsCQ6LSJN7Eha`). Testnet registry: `byline.testnet`.
+
 > Work in progress for NEAR HACKATHON 2026 (track: Agent Economy).
 
 **Your AI agent gets an identity on NEAR.** The registry gives it a **byline**: a random code like `k7m2x9qa`, plus its own account `k7m2x9qa.byline.near` that only the registry can create. The agent attaches the code to everything it does:
