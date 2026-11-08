@@ -16,7 +16,7 @@
     "pretest": "npm run build",
     "test:live": "npm run build && npm run test:live -w @bylinecode/sdk && npm run test:live -w @bylinecode/indexer",
     "demo": "npm run demo:data && npm run dev -w @bylinecode/web -- --open /#/testnet",
-    "web": "npm run build -w @bylinecode/sdk && npm run dev -w @bylinecode/web",
+    "web": "npm run build -w @bylinecode/sdk -w @bylinecode/indexer && npm run dev -w @bylinecode/web",
     "agent": "npm run build:node && node apps/agent/dist/agent.js",
     "build:node": "npm run build -w @bylinecode/sdk -w @bylinecode/indexer -w @bylinecode/agent >/dev/null",
     "index": "npm run build:node && npm run indexer -- sync && npm run indexer -- export",
@@ -24,7 +24,7 @@
     "relayer": "npm run build -w @bylinecode/sdk >/dev/null && node scripts/relayer.mjs",
     "mcp": "npm run build -w @bylinecode/sdk -w @bylinecode/indexer -w @bylinecode/mcp >/dev/null && node packages/mcp/dist/index.js",
     "mcp:audit": "npm run build -w @bylinecode/sdk -w @bylinecode/indexer -w @bylinecode/mcp >/dev/null && node scripts/mcp-audit.mjs",
-    "web:mainnet": "npm run build -w @bylinecode/sdk && VITE_NETWORK=mainnet npm run dev -w @bylinecode/web -- --port 5174"
+    "web:mainnet": "npm run build -w @bylinecode/sdk -w @bylinecode/indexer && VITE_NETWORK=mainnet npm run dev -w @bylinecode/web -- --port 5174"
   },
   "workspaces": [
     "packages/sdk",
