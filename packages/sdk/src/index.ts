@@ -43,8 +43,10 @@ export {
   parseBylineMemo,
 } from "./names.js";
 export {
+  nearConfig,
   REGISTRY_IDS,
   registryFor,
+  rpcUrlFor,
   type AppFee,
   type Attribution,
   type BylineEvent,

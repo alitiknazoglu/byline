@@ -1,6 +1,6 @@
 import { Near, type CallOptions } from "near-kit";
 import type { SignedRegistration } from "./onboard.js";
-import { REGISTRY_IDS, type BylineRecord, type NetworkId, type RegistryAttribution, type SponsorStatus } from "./types.js";
+import { nearConfig, REGISTRY_IDS, type BylineRecord, type NetworkId, type RegistryAttribution, type SponsorStatus } from "./types.js";
 
 type Gas = NonNullable<CallOptions["gas"]>;
 type Deposit = NonNullable<CallOptions["attachedDeposit"]>;
@@ -52,7 +52,7 @@ export class Registry {
   constructor(opts: RegistryOptions) {
     this.network = opts.network;
     this.contractId = opts.contractId ?? REGISTRY_IDS[opts.network];
-    this.near = opts.near ?? new Near({ network: opts.network });
+    this.near = opts.near ?? new Near(nearConfig(opts.network));
     this.signerId = opts.signerId;
   }
 

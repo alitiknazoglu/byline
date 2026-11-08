@@ -8,6 +8,23 @@ export const REGISTRY_IDS: Record<NetworkId, string> = {
 };
 
 /**
+ * A private RPC endpoint for `network`, from NEAR_RPC_MAINNET / NEAR_RPC_TESTNET (full URL, e.g. a dRPC
+ * endpoint with its key). Server-side only: in the browser there is no `process.env`, so this returns
+ * undefined and near-kit's public default is used. Never expose these through VITE_ variables.
+ */
+export function rpcUrlFor(network: NetworkId): string | undefined {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  const url = env?.[network === "mainnet" ? "NEAR_RPC_MAINNET" : "NEAR_RPC_TESTNET"]?.trim();
+  return url || undefined;
+}
+
+/** `{ network }` plus the private RPC for it when one is configured. Spread into `new Near(...)`. */
+export function nearConfig(network: NetworkId): { network: NetworkId; rpcUrl?: string } {
+  const rpcUrl = rpcUrlFor(network);
+  return rpcUrl ? { network, rpcUrl } : { network };
+}
+
+/**
  * A registry id from config (e.g. REGISTRY_CONTRACT_ID) if it belongs to `network`, else the default.
  * Guards against a testnet override leaking into mainnet runs (`x.testnet` on mainnet, or `x.near` on testnet).
  */

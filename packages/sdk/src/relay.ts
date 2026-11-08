@@ -9,7 +9,7 @@ import { Near } from "near-kit";
 import { verifyRegistration, type SignedRegistration } from "./onboard.js";
 import { checkPow, DEFAULT_POW_BITS } from "./pow.js";
 import { Registry } from "./registry.js";
-import { REGISTRY_IDS, type NetworkId } from "./types.js";
+import { nearConfig, REGISTRY_IDS, type NetworkId } from "./types.js";
 
 export interface RelayerConfig {
   network: NetworkId;
@@ -95,7 +95,7 @@ export class Relayer {
       this.registry = cfg.registry;
     } else {
       if (!cfg.privateKey) throw new Error("The relayer needs its function-call key (privateKey)");
-      const near = new Near({ network: cfg.network, privateKey: cfg.privateKey as `ed25519:${string}`, defaultSignerId: registryId });
+      const near = new Near({ ...nearConfig(cfg.network), privateKey: cfg.privateKey as `ed25519:${string}`, defaultSignerId: registryId });
       this.registry = new Registry({ network: cfg.network, contractId: registryId, near, signerId: registryId });
     }
     this.perIp = cfg.perIpPerHour ?? 5;

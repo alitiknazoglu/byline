@@ -5,14 +5,14 @@ import { dirname, join } from "node:path";
 import { generateKey, Near, parseKey } from "near-kit";
 import { createByline, type CreateBylineOptions, type CreatedByline } from "./onboard.js";
 import { FileKeyStore } from "near-kit/keys/file";
-import type { NetworkId, Recorder } from "./types.js";
+import { nearConfig, type NetworkId, type Recorder } from "./types.js";
 
 /**
  * A near-kit signer backed by `~/.near-credentials/<network>/` (the near-cli layout).
  * Keys stay on disk; nothing is copied into env vars.
  */
 export function nearFromCredentials(accountId: string, network: NetworkId, dir = join(homedir(), ".near-credentials")): Near {
-  return new Near({ network, keyStore: new FileKeyStore(dir, network), defaultSignerId: accountId });
+  return new Near({ ...nearConfig(network), keyStore: new FileKeyStore(dir, network), defaultSignerId: accountId });
 }
 
 /** Appends every SDK event as one JSON line. The indexer reads this file. */

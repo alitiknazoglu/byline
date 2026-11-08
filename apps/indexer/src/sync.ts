@@ -4,6 +4,7 @@ import type { DatabaseSync } from "node:sqlite";
 import { Near } from "near-kit";
 import {
   mainnetPayoutChecker,
+  nearConfig,
   OneClick,
   Registry,
   TERMINAL_STATUSES,
@@ -41,7 +42,7 @@ export function createContext(opts: {
   oneClickJwt?: string;
   log?: (msg: string) => void;
 }): SyncContext {
-  const mainnet = new Near({ network: "mainnet" });
+  const mainnet = new Near(nearConfig("mainnet"));
   return {
     network: opts.network,
     registry: new Registry({ network: opts.network, contractId: opts.registryId }),

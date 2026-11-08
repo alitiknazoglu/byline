@@ -1,7 +1,7 @@
 import { Near } from "near-kit";
 import { assertValidCode, MAX_FEE_BPS } from "./names.js";
 import type { Registry } from "./registry.js";
-import type { AppFee, Attribution } from "./types.js";
+import { nearConfig, type AppFee, type Attribution } from "./types.js";
 
 /** 64 lowercase hex chars: a NEAR implicit account, which exists as soon as it holds funds. */
 const IMPLICIT = /^[0-9a-f]{64}$/;
@@ -16,7 +16,7 @@ export interface PayoutChecker {
  * 1Click accepts any account name, so a fee sent to a missing account is lost
  * (or claimable by whoever registers that name later). The SDK refuses to route fees there.
  */
-export function mainnetPayoutChecker(near: Near = new Near({ network: "mainnet" })): PayoutChecker {
+export function mainnetPayoutChecker(near: Near = new Near(nearConfig("mainnet"))): PayoutChecker {
   const cache = new Map<string, boolean>();
   return {
     async canReceive(accountId) {

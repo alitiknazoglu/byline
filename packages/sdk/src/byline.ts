@@ -3,7 +3,7 @@ import { mainnetPayoutChecker, resolveAttribution, withByline, type PayoutChecke
 import { assertValidCode, bylineMemo } from "./names.js";
 import { OneClick, type OneClickToken, type QuoteRequest, type QuoteResponse, type StatusResponse, type SwapType } from "./oneclick.js";
 import { Registry } from "./registry.js";
-import type { Attribution, BylineEvent, NetworkId, Recorder } from "./types.js";
+import { nearConfig, type Attribution, type BylineEvent, type NetworkId, type Recorder } from "./types.js";
 
 /** NEP-145 registration for a fresh receiver. Enough for every common NEP-141 token. */
 const FT_STORAGE_DEPOSIT = "0.00125 NEAR";
@@ -143,7 +143,7 @@ export class Byline {
     this.near =
       opts.near ??
       new Near({
-        network: this.network,
+        ...nearConfig(this.network),
         ...(opts.privateKey ? { privateKey: opts.privateKey as `ed25519:${string}` } : {}),
         ...(opts.accountId ? { defaultSignerId: opts.accountId } : {}),
       });
