@@ -2,11 +2,11 @@
  "label": "testnet",
  "network": "testnet",
  "registry": "byline.testnet",
- "generatedAt": "2026-11-08T17:37:05.257Z",
+ "generatedAt": "2026-11-08T18:01:02.327Z",
  "sample": false,
  "summary": {
-  "bylines": 5,
-  "accounts": 5,
+  "bylines": 6,
+  "accounts": 6,
   "swaps": 0,
   "volume_usd": 0,
   "builder_fees_usd": 0,
@@ -80,6 +80,25 @@
    "payout": "gw64cvz8.byline.testnet",
    "fee_bps": 40,
    "account": "gw64cvz8.byline.testnet",
+   "accounts": 1,
+   "swaps": 0,
+   "swaps_failed": 0,
+   "volume_usd": 0,
+   "builder_fees_usd": 0,
+   "txs": 0,
+   "counterparties": 0,
+   "memo_transfers": 0,
+   "memo_payers": 0,
+   "dry_quotes": 0,
+   "sample": false
+  },
+  {
+   "name": "k8zbasxa",
+   "title": "Hosted relayer check",
+   "owner": "k8zbasxa.byline.testnet",
+   "payout": "k8zbasxa.byline.testnet",
+   "fee_bps": 40,
+   "account": "k8zbasxa.byline.testnet",
    "accounts": 1,
    "swaps": 0,
    "swaps_failed": 0,
@@ -712,6 +731,84 @@
      "name": "gw64cvz8",
      "data": "[{\"code\":\"gw64cvz8\",\"owner\":\"gw64cvz8.byline.testnet\",\"payout\":\"gw64cvz8.byline.testnet\",\"fee_bps\":40,\"via\":\"signed\",\"public_key\":\"ed25519:BWLdrorKXZ6jcV6HsjwSJnrXzA4Eb9qBsJ5e4gHoRygJ\"}]",
      "block_ts_ms": 1794159392682
+    }
+   ],
+   "quotes": [],
+   "intentsBalances": []
+  },
+  "k8zbasxa": {
+   "byline": {
+    "name": "k8zbasxa",
+    "title": "Hosted relayer check",
+    "owner": "k8zbasxa.byline.testnet",
+    "payout": "k8zbasxa.byline.testnet",
+    "fee_bps": 40,
+    "account": "k8zbasxa.byline.testnet",
+    "accounts": 1,
+    "swaps": 0,
+    "swaps_failed": 0,
+    "volume_usd": 0,
+    "builder_fees_usd": 0,
+    "txs": 0,
+    "counterparties": 0,
+    "memo_transfers": 0,
+    "memo_payers": 0,
+    "dry_quotes": 0,
+    "sample": false
+   },
+   "accounts": [
+    {
+     "account_id": "k8zbasxa.byline.testnet",
+     "kind": "own"
+    }
+   ],
+   "swaps": [],
+   "txs": [],
+   "memoTransfers": [],
+   "events": [
+    {
+     "receipt_id": "8GwwBarNZk4HJtSGkd2pH3sVyg26NNhaFtAr4ge8Uine",
+     "log_index": 0,
+     "network": "testnet",
+     "tx_hash": "3Zfoz5WGVmzZF6vmR34kAjreQEUAY8q61H1WJg5RmsgJ",
+     "standard": "byline",
+     "event": "account_created",
+     "name": "k8zbasxa",
+     "data": "[{\"code\":\"k8zbasxa\",\"account_id\":\"k8zbasxa.byline.testnet\"}]",
+     "block_ts_ms": 1794160577268
+    },
+    {
+     "receipt_id": "8GwwBarNZk4HJtSGkd2pH3sVyg26NNhaFtAr4ge8Uine",
+     "log_index": 1,
+     "network": "testnet",
+     "tx_hash": "3Zfoz5WGVmzZF6vmR34kAjreQEUAY8q61H1WJg5RmsgJ",
+     "standard": "byline",
+     "event": "account_linked",
+     "name": "k8zbasxa",
+     "data": "[{\"code\":\"k8zbasxa\",\"account_id\":\"k8zbasxa.byline.testnet\"}]",
+     "block_ts_ms": 1794160577268
+    },
+    {
+     "receipt_id": "4ThxqDPc8rxawPQfdovGiJVESkbi5hscj49W5wXfafKg",
+     "log_index": 0,
+     "network": "testnet",
+     "tx_hash": "3Zfoz5WGVmzZF6vmR34kAjreQEUAY8q61H1WJg5RmsgJ",
+     "standard": "nep171",
+     "event": "nft_mint",
+     "name": "k8zbasxa",
+     "data": "[{\"owner_id\":\"k8zbasxa.byline.testnet\",\"token_ids\":[\"k8zbasxa\"]}]",
+     "block_ts_ms": 1794160576052
+    },
+    {
+     "receipt_id": "4ThxqDPc8rxawPQfdovGiJVESkbi5hscj49W5wXfafKg",
+     "log_index": 1,
+     "network": "testnet",
+     "tx_hash": "3Zfoz5WGVmzZF6vmR34kAjreQEUAY8q61H1WJg5RmsgJ",
+     "standard": "byline",
+     "event": "byline_registered",
+     "name": "k8zbasxa",
+     "data": "[{\"code\":\"k8zbasxa\",\"owner\":\"k8zbasxa.byline.testnet\",\"payout\":\"k8zbasxa.byline.testnet\",\"fee_bps\":40,\"via\":\"signed\",\"public_key\":\"ed25519:DzyvdUjaMGh6r1tP9Vmr9Mkn71pc1kh9EX2jFexMaLHB\"}]",
+     "block_ts_ms": 1794160576052
     }
    ],
    "quotes": [],
