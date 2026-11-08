@@ -76,9 +76,9 @@ export function memoryRateStore(): RateStore {
  * instance. `url` and `token` are UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN.
  */
 export function upstashRateStore(url: string, token: string, doFetch: typeof fetch = fetch): RateStore {
-  const base = url.replace(/\/+$/, "");
+  const endpoint = url.replace(/\/+$/, "");
   const post = async (path: string, body: unknown) => {
-    const res = await doFetch(`${base}${path}`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(body) });
+    const res = await doFetch(`${endpoint}${path}`, { method: "POST", headers: { authorization: `Bearer ${token}`, "content-type": "application/json" }, body: JSON.stringify(body) });
     if (!res.ok) throw new Error(`rate store HTTP ${res.status}`);
     return (await res.json()) as unknown;
   };

@@ -3,6 +3,27 @@
   "version": "0.1.0",
   "description": "Give your AI agent a byline on NEAR: credit every swap, payment and transaction to the agent and its builder.",
   "license": "MIT",
+  "author": "Ali Tıknazoğlu",
+  "homepage": "https://www.by-line.xyz",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/alitiknazoglu/byline.git",
+    "directory": "packages/sdk"
+  },
+  "bugs": {
+    "url": "https://github.com/alitiknazoglu/byline/issues"
+  },
+  "keywords": [
+    "near",
+    "ai-agents",
+    "agents",
+    "attribution",
+    "near-intents",
+    "1click",
+    "nep-171",
+    "nep-413",
+    "byline"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -21,7 +42,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22"
@@ -30,7 +53,8 @@
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run test/unit.test.ts",
-    "test:live": "vitest run test/live.test.ts"
+    "test:live": "vitest run test/live.test.ts",
+    "prepublishOnly": "npm run build && npm test"
   },
   "dependencies": {
     "near-kit": "0.20.2",
@@ -40,5 +64,8 @@
     "@types/node": "^22.10.0",
     "typescript": "5.9.3",
     "vitest": "4.1.12"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
