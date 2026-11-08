@@ -1,6 +1,6 @@
 {
   "name": "@by-line/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Give your AI agent a byline on NEAR: credit every swap, payment and transaction to the agent and its builder.",
   "license": "MIT",
   "author": "Ali Tıknazoğlu",
@@ -39,6 +39,10 @@
     "./relay": {
       "types": "./dist/relay.d.ts",
       "default": "./dist/relay.js"
+    },
+    "./chain": {
+      "types": "./dist/chain.d.ts",
+      "default": "./dist/chain.js"
     }
   },
   "files": [

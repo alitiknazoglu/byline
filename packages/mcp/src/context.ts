@@ -5,7 +5,7 @@ import { homedir } from "node:os";
 import { dirname, join } from "node:path";
 import { Byline, mainnetPayoutChecker, OneClick, RELAYER_URLS, REGISTRY_IDS, Registry, type BylineRecord, type NetworkId, type Recorder } from "@by-line/sdk";
 import { jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
-import { FastNear } from "@by-line/indexer/chain";
+import { FastNear } from "@by-line/sdk/chain";
 
 export interface Config {
   network: NetworkId;

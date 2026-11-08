@@ -22,7 +22,7 @@ The SDK is `@by-line/sdk`. The full rules are in `contract/RULES.md` of the Byli
 
 ## Easiest: use the Byline MCP server
 
-If the agent runs in an MCP client (Claude Code, Claude Desktop, Cursor), register `packages/mcp/dist/index.js` from the Byline repo; `packages/mcp/README.md` has the config. It exposes these tools:
+If the agent runs in an MCP client (Claude Code, Claude Desktop, Cursor), register it with `npx -y @by-line/mcp` (it's on npm); `packages/mcp/README.md` has the config. It exposes these tools:
 - **Identity:** `byline_create` (free) and `byline_info`;
 - **Swaps:** `byline_quote` (always dry) and `byline_swap` (preview unless confirmed on mainnet);
 - **Payments:** `byline_pay` (memo `byline:<code>`);

@@ -23,13 +23,15 @@ Then register it. For Claude Code, put this in `.mcp.json`; an example is in [mc
 {
   "mcpServers": {
     "byline": {
-      "command": "node",
-      "args": ["/absolute/path/to/byline/packages/mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@by-line/mcp"],
       "env": { "BYLINE_NETWORK": "testnet" }
     }
   }
 }
 ```
+
+Working from a clone instead? Use `"command": "node"` with `"args": ["<clone>/packages/mcp/dist/index.js"]` after `npm run build`.
 
 Then ask in plain words, for example: *"Use byline to give yourself an identity, quote 1 USDC → wNEAR, and show me it carries your code."*
 

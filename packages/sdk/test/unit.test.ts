@@ -375,6 +375,21 @@ describe("generateAgentKey", () => {
 
 // ---------- onboarding (gasless) ----------
 
+describe("Registry.inviteAccount", () => {
+  it("refuses to invite an account that doesn't exist yet, unless told to", async () => {
+    const f = fakeNear({}, ["bot.testnet"]);
+    const r = new Registry({ network: "testnet", near: f.near, signerId: "builder.testnet" });
+    await expect(r.inviteAccount("k7m2x9qa", "ghost.testnet")).rejects.toThrow(/doesn't exist on testnet/);
+    expect(f.calls).toHaveLength(0);
+    await r.inviteAccount("k7m2x9qa", "bot.testnet");
+    await r.inviteAccount("k7m2x9qa", "ghost.testnet", { allowMissing: true });
+    expect(f.calls.map((c) => [c.method, (c.args as { account_id: string }).account_id])).toEqual([
+      ["invite_account", "bot.testnet"],
+      ["invite_account", "ghost.testnet"],
+    ]);
+  });
+});
+
 describe("gasless onboarding", () => {
   const FIXTURE = JSON.parse(readFileSync(new URL("../../../fixtures/nep413-register.json", import.meta.url), "utf8"));
 

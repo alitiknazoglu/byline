@@ -12,7 +12,7 @@ import { isValidAccountId } from "near-kit";
 import { z } from "zod";
 import { CODE_PATTERN, MAX_FEE_BPS, OneClickError, Registry, type NetworkId } from "@by-line/sdk";
 import { createAgentByline } from "@by-line/sdk/node";
-import { parseMemoTransfers, parseTx } from "@by-line/indexer/chain";
+import { parseMemoTransfers, parseTx } from "@by-line/sdk/chain";
 import type { Context } from "./context.js";
 
 // ---------- result helpers ----------

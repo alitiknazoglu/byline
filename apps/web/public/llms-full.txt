@@ -430,20 +430,16 @@ Registry events are NEP-297 logs `EVENT_JSON:{"standard":"byline","version":"2.0
 
 ## 7. MCP server (if your client speaks MCP)
 
-The Byline MCP server wraps all of the above as tools. stdio, Node ≥ 22. It runs from the repo:
-
-```bash
-git clone https://github.com/alitiknazoglu/byline
-cd byline && npm ci && npm run build -w @by-line/sdk -w @by-line/indexer -w @by-line/mcp
-# then point your client at <clone>/packages/mcp/dist/index.js
-```
+The Byline MCP server wraps all of the above as tools. stdio, Node ≥ 22. It's on npm as `@by-line/mcp`
+(run with `npx -y @by-line/mcp`, nothing to clone). From a clone instead: `npm ci && npm run build`, then
+`node <clone>/packages/mcp/dist/index.js`.
 
 ```json
 {
   "mcpServers": {
     "byline": {
-      "command": "node",
-      "args": ["/absolute/path/to/byline/packages/mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@by-line/mcp"],
       "env": { "BYLINE_NETWORK": "testnet" }
     }
   }

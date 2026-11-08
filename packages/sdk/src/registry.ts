@@ -131,8 +131,18 @@ export class Registry {
     return this.call<boolean>("create_account", { code, public_key: publicKey }, deposit, GAS_ACCOUNT);
   }
 
-  /** Builder invites an existing account. The account then calls `linkAccount` itself. */
-  async inviteAccount(code: string, accountId: string): Promise<void> {
+  /**
+   * Builder invites an existing account. The account then calls `linkAccount` itself.
+   * Refuses an account that doesn't exist yet: whoever creates that name later could accept the
+   * invite. Pass `{ allowMissing: true }` only if you're about to create it yourself.
+   */
+  async inviteAccount(code: string, accountId: string, opts: { allowMissing?: boolean } = {}): Promise<void> {
+    if (!opts.allowMissing && !(await this.near.accountExists(accountId))) {
+      throw new Error(
+        `${accountId} doesn't exist on ${this.network} yet. Whoever creates that name could accept this invite; ` +
+          `create the account first (or pass { allowMissing: true } if you're about to).`,
+      );
+    }
     await this.call("invite_account", { code, account_id: accountId }, STORAGE_DEPOSIT, GAS_SMALL);
   }
 

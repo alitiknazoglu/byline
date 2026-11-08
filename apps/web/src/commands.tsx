@@ -2,7 +2,7 @@
 import type { ReactNode } from "react";
 import { Near, generateKey, isValidAccountId } from "near-kit";
 import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@by-line/sdk";
-import { FastNear, parseMemoTransfers, parseTx } from "@by-line/indexer/chain";
+import { FastNear, parseMemoTransfers, parseTx } from "@by-line/sdk/chain";
 import { accountUrl, ago, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
 import { Cmd, Code, CodeRef, Err, Ext, Gap, Head, Json, KV, Line, Ok, Table, Trace, Warn, type Col, type Step } from "./ui";
 import { prefersReducedMotion } from "./clearing";
@@ -626,12 +626,12 @@ export const COMMANDS: Record<string, Command> = {
     summary: "use Byline from Claude Code, Cursor or any MCP client",
     run: () => (
       <>
-        <Line>Register the Byline MCP server (from the repo: npm run build, then point at packages/mcp/dist/index.js):</Line>
+        <Line>Register the Byline MCP server (it's on npm as @by-line/mcp; nothing to clone):</Line>
         <Code>{`{
   "mcpServers": {
     "byline": {
-      "command": "node",
-      "args": ["/path/to/byline/packages/mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@by-line/mcp"],
       "env": { "BYLINE_NETWORK": "${NETWORK}" }
     }
   }

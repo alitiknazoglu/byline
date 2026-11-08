@@ -1,8 +1,8 @@
 {
   "mcpServers": {
     "byline": {
-      "command": "node",
-      "args": ["/absolute/path/to/byline/packages/mcp/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@by-line/mcp"],
       "env": {
         "BYLINE_NETWORK": "testnet",
         "BYLINE_RELAYER_URL": "http://localhost:8787/register"
