@@ -21,7 +21,7 @@ import {
   prefersReducedMotion,
   type ClearStep,
 } from "./clearing";
-import { clearSnapshotCache, loadSnapshot, type Room } from "./data";
+import { ago, clearSnapshotCache, loadSnapshot, type Room } from "./data";
 import { DEMO_TX, IS_MAINNET, NETWORK, OTHER_NETWORK, OTHER_SITE, REGISTRY as REGISTRY_ID, registryMissing } from "./network";
 import { TermContext } from "./term-context";
 import { Err, Line } from "./ui";
@@ -467,13 +467,7 @@ export function Terminal() {
           </a>
           <span className="seg">registry {REGISTRY}</span>
           <span className="seg hide-sm">
-            indexed{" "}
-            {indexedAt
-              ? new Date(indexedAt).toLocaleString("en-GB", {
-                  dateStyle: "short",
-                  timeStyle: "short",
-                })
-              : "…"}
+            indexed {indexedAt ? ago(indexedAt) : "…"}
           </span>
           <span className="seg hide-sm">quotes are dry · nothing is sent</span>
           <span className="seg right">{busy ? "working" : "ready"} · help</span>

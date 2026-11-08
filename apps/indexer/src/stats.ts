@@ -56,7 +56,8 @@ export function leaderboard(db: DatabaseSync, network: NetworkId, sort: SortKey 
           UNION SELECT m.sender FROM memo_transfers m WHERE m.network = b.network AND m.name = b.name AND m.success = 1
         ) x WHERE x.cp NOT IN (SELECT a.account_id FROM accounts a WHERE a.network = b.network AND a.name = b.name)) AS counterparties,
       (SELECT COUNT(*) FROM memo_transfers m WHERE m.network = b.network AND m.name = b.name AND m.success = 1
-        AND m.sender IN (SELECT a.account_id FROM accounts a WHERE a.network = b.network AND a.name = b.name)) AS memo_transfers,
+        AND m.sender IN (SELECT a.account_id FROM accounts a WHERE a.network = b.network AND a.name = b.name)
+        AND m.receiver NOT IN (SELECT deposit_address FROM swaps)) AS memo_transfers,
       (SELECT COUNT(DISTINCT m.sender) FROM memo_transfers m WHERE m.network = b.network AND m.name = b.name AND m.success = 1
         AND m.amount != '0'
         AND m.sender NOT IN (SELECT a.account_id FROM accounts a WHERE a.network = b.network AND a.name = b.name)) AS memo_payers,
@@ -93,7 +94,13 @@ export function bylineDetail(db: DatabaseSync, network: NetworkId, name: string,
     accounts: all("SELECT account_id, kind FROM accounts WHERE network = ? AND name = ? ORDER BY kind DESC, account_id", network, name) as never,
     swaps: all("SELECT * FROM swaps WHERE name = ? ORDER BY created_at DESC LIMIT ?", name, limit),
     txs: all("SELECT * FROM txs WHERE network = ? AND name = ? ORDER BY block_height DESC LIMIT ?", network, name, limit),
-    memoTransfers: all("SELECT * FROM memo_transfers WHERE network = ? AND name = ? ORDER BY block_ts_ms DESC LIMIT ?", network, name, limit),
+    // Transfers into a swap's deposit address are part of that swap, shown under swaps.
+    memoTransfers: all(
+      "SELECT * FROM memo_transfers WHERE network = ? AND name = ? AND receiver NOT IN (SELECT deposit_address FROM swaps) ORDER BY block_ts_ms DESC LIMIT ?",
+      network,
+      name,
+      limit,
+    ),
     events: all("SELECT * FROM registry_events WHERE network = ? AND name = ? ORDER BY block_ts_ms DESC LIMIT ?", network, name, limit),
     quotes: all("SELECT * FROM quotes WHERE name = ? ORDER BY at DESC LIMIT ?", name, limit),
     intentsBalances: byline.payout

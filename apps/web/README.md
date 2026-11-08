@@ -67,7 +67,7 @@ Environment variables on the project:
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` (or `KV_REST_API_URL` / `KV_REST_API_TOKEN`, as Vercel's Upstash integration names them): shared per-IP rate limit. **Required for mainnet** (the relayer refuses mainnet without it).
 - Optional: `RELAYER_POW_BITS` (default 20); `VITE_DEMO_CODE_MAINNET` / `VITE_DEMO_TX_MAINNET` (and `_TESTNET`) for the default demo agent and `verify` button.
 
-Everything network-specific (registry, wNEAR contract, explorer links, wallet network, the link to the other site) comes from `src/network.ts`. Locally: `npm run web` (testnet) or `npm run web:mainnet`. Refresh `public/data/*.json` by re-running the indexer's export and pushing.
+Everything network-specific (registry, wNEAR contract, explorer links, wallet network, the link to the other site) comes from `src/network.ts`. Locally: `npm run web` (testnet) or `npm run web:mainnet`. **Leaderboard data is live, not committed.** `GET /api/snapshot?network=testnet|mainnet` indexes the network from the chain on demand (registry, agents' transactions and memo payments, swaps found from their on-chain deposits and checked against 1Click) and caches the result in Upstash for 90 s, plus 60 s on Vercel's CDN. One request at a time re-indexes (a Redis lock), the rest get the last copy, and a failed re-index still serves the last good copy. Nothing is redeployed when data changes. `public/data/*.json` is only a fallback for local dev or if the API is down.
 
 ## Design
 

@@ -105,15 +105,22 @@ export interface Snapshot {
 
 const cache = new Map<Room, Promise<Snapshot | null>>();
 
-/** The indexer's JSON snapshot for a room, or null when that room has none yet. */
+/**
+ * A room's snapshot. testnet/mainnet come from /api/snapshot (indexed from the chain on demand, at most
+ * a couple of minutes old); the static file in /data is the fallback (local dev, or if the API is down).
+ * The sample room is always the static file.
+ */
 export function loadSnapshot(room: Room): Promise<Snapshot | null> {
   if (!cache.has(room)) {
-    cache.set(
-      room,
+    const fromFile = () =>
       fetch(`${import.meta.env.BASE_URL}data/${room}.json`)
         .then((r) => (r.ok ? (r.json() as Promise<Snapshot>) : null))
-        .catch(() => null),
-    );
+        .catch(() => null);
+    const fromApi = () =>
+      fetch(`/api/snapshot?network=${room}`)
+        .then((r) => (r.ok && (r.headers.get("content-type") ?? "").includes("json") ? (r.json() as Promise<Snapshot>) : null))
+        .catch(() => null);
+    cache.set(room, room === "sample" ? fromFile() : fromApi().then((s) => s ?? fromFile()));
   }
   return cache.get(room)!;
 }
@@ -175,4 +182,13 @@ export function accountUrl(network: "testnet" | "mainnet", id: string, sample: b
 
 export function swapUrl(depositAddress: string, sample: boolean): string | null {
   return sample ? null : `https://explorer.near-intents.org/transactions/${depositAddress}`;
+}
+
+/** "just now", "3 min ago", "2 h ago", or a date for anything older than a day. */
+export function ago(ms: number | string): string {
+  const d = Date.now() - new Date(ms).getTime();
+  if (d < 60_000) return "just now";
+  if (d < 3_600_000) return `${Math.round(d / 60_000)} min ago`;
+  if (d < 86_400_000) return `${Math.round(d / 3_600_000)} h ago`;
+  return dateTime(ms);
 }

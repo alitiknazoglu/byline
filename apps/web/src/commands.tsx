@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 import { Near, generateKey } from "near-kit";
 import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@bylinecode/sdk";
 import { FastNear, parseMemoTransfers, parseTx } from "@bylinecode/indexer/chain";
-import { accountUrl, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
+import { accountUrl, ago, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
 import { Cmd, Code, CodeRef, Err, Ext, Gap, Head, Json, KV, Line, Ok, Table, Trace, Warn, type Col, type Step } from "./ui";
 import { prefersReducedMotion } from "./clearing";
 import type { WalletState } from "./wallet";
@@ -285,8 +285,10 @@ export const COMMANDS: Record<string, Command> = {
       return (
         <>
           <Line tone="dim">
-            {r === "sample" ? "SAMPLE data: made-up agents priced from a real recorded 1Click quote; nothing here is on-chain." : `live from ${snap.registry}`} · indexed{" "}
-            {dateTime(snap.generatedAt)} · sorted by {str(flags.sort) ?? "volume"}
+            {r === "sample"
+              ? `SAMPLE data: made-up agents priced from a real recorded 1Click quote; nothing here is on-chain · indexed ${dateTime(snap.generatedAt)}`
+              : `indexed from ${snap.registry} · ${ago(snap.generatedAt)} · refreshes every ~2 min`}{" "}
+            · sorted by {str(flags.sort) ?? "volume"}
           </Line>
           <Table cols={cols} rows={rows} empty="No bylines yet. Be the first: register" />
         </>
@@ -380,8 +382,12 @@ export const COMMANDS: Record<string, Command> = {
             ]}
             rows={d.events.slice(0, 8)}
           />
-          <Head n={d.quotes.length}>dry quotes</Head>
-          <Line tone="dim">{d.quotes.length ? `${d.quotes.length} previews with the code attached (never counted as volume). Run quote --code ${b.name} for a live one.` : `none yet: quote --code ${b.name}`}</Line>
+          {d.quotes.length > 0 && (
+            <>
+              <Head n={d.quotes.length}>dry quotes</Head>
+              <Line tone="dim">{`${d.quotes.length} previews with the code attached (never counted as volume). Run quote --code ${b.name} for a live one.`}</Line>
+            </>
+          )}
         </>
       );
     },

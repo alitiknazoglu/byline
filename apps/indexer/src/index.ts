@@ -9,6 +9,7 @@ export {
   ingestRecorded,
   syncActivity,
   syncAll,
+  syncChainSwaps,
   syncExplorer,
   syncIntentsBalances,
   syncRegistry,
@@ -16,3 +17,4 @@ export {
   syncSwapStatus,
   type SyncContext,
 } from "./sync.js";
+export { buildSnapshot, indexNetwork, type Snapshot } from "./snapshot.js";

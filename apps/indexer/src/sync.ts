@@ -249,6 +249,72 @@ export async function ingestRecorded(db: DatabaseSync, ctx: SyncContext, path: s
   return { quotes, swaps, transfers };
 }
 
+// ---------- 4b. swaps found on-chain ----------
+
+/** 1Click deposit addresses on NEAR are implicit accounts: 64 lowercase hex characters. */
+const DEPOSIT_ADDRESS = /^[0-9a-f]{64}$/;
+
+/**
+ * Swaps discovered from the chain alone, no local SDK log or partner key needed: every live swap starts
+ * with a token transfer signed by the agent's own account, memo `byline:<code>`, to a 1Click deposit
+ * address. For each such transfer, 1Click's status says what the swap was. It only counts if 1Click's
+ * own record carries this byline's code as the referral.
+ */
+export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promise<number> {
+  const candidates = db
+    .prepare(
+      `SELECT m.tx_hash, m.name, m.sender, m.receiver, m.token, m.amount, m.block_ts_ms
+       FROM memo_transfers m
+       WHERE m.network = ? AND m.success = 1
+         AND m.sender IN (SELECT a.account_id FROM accounts a WHERE a.network = m.network AND a.name = m.name)
+         AND m.receiver NOT IN (SELECT deposit_address FROM swaps)`,
+    )
+    .all(ctx.network) as { tx_hash: string; name: string; sender: string; receiver: string; token: string; amount: string; block_ts_ms: number }[];
+  const ins = db.prepare(`
+    INSERT OR IGNORE INTO swaps (deposit_address, name, status, origin_asset, destination_asset, amount_in, amount_out, amount_in_usd, amount_out_usd,
+      builder_fee_bps, app_fees, deposit_tx, sender, refund_reason, created_at, updated_at, source)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'chain')`);
+  const payoutOf = db.prepare("SELECT payout FROM bylines WHERE network = ? AND name = ?");
+  let found = 0;
+  for (const c of candidates.filter((x) => DEPOSIT_ADDRESS.test(x.receiver))) {
+    const checkedKey = `chainswap:${ctx.network}:${c.receiver}`;
+    if (getCursor(db, checkedKey) === "not-1click") continue;
+    let s;
+    try {
+      s = await ctx.oneClick.status(c.receiver);
+    } catch (e) {
+      // 404: not a 1Click deposit address (an ordinary implicit account). Remember, don't ask again.
+      if ((e as { status?: number }).status === 404) setCursor(db, checkedKey, "not-1click");
+      else ctx.log(`chain swaps: ${c.receiver}: ${(e as Error).message}`);
+      continue;
+    }
+    const req = s.quoteResponse?.quoteRequest;
+    if (!req || req.referral !== c.name) {
+      ctx.log(`chain swaps: ${c.receiver} referral is ${req?.referral ?? "none"}, not ${c.name}; not credited`);
+      setCursor(db, checkedKey, "not-1click");
+      continue;
+    }
+    const q = s.quoteResponse?.quote;
+    const d = (s.swapDetails ?? {}) as Record<string, unknown>;
+    const num = (v: unknown) => (v === undefined || v === null || v === "" ? null : Number(v));
+    const payout = (payoutOf.get(ctx.network, c.name) as { payout: string | null } | undefined)?.payout ?? null;
+    const appFees = req.appFees ?? [];
+    const builderBps = appFees.filter((f) => f.recipient === payout).reduce((n, f) => n + f.fee, 0);
+    const at = new Date(c.block_ts_ms).toISOString();
+    found += Number(
+      ins.run(
+        c.receiver, c.name, s.status, req.originAsset ?? `nep141:${c.token}`, req.destinationAsset ?? null,
+        (d.amountIn as string) ?? q?.amountIn ?? c.amount, (d.amountOut as string) ?? q?.amountOut ?? null,
+        num(d.amountInUsd) ?? num(q?.amountInUsd), num(d.amountOutUsd) ?? num(q?.amountOutUsd),
+        builderBps, JSON.stringify(appFees), c.tx_hash, c.sender, (d.refundReason as string) ?? null, at, now(),
+      ).changes,
+    );
+    await ctx.sleep(1_000);
+  }
+  ctx.log(`chain swaps: ${found} new`);
+  return found;
+}
+
 // ---------- 5. swap status from 1Click ----------
 
 export async function syncSwapStatus(db: DatabaseSync, ctx: SyncContext): Promise<number> {
@@ -307,7 +373,7 @@ export async function syncExplorer(db: DatabaseSync, ctx: SyncContext): Promise<
     return 0;
   }
   if (!ctx.explorerJwt) {
-    ctx.log("explorer: skipped (no EXPLORER_JWT); swaps come from SDK records + 1Click status");
+    ctx.log("explorer: skipped (no EXPLORER_JWT); swaps come from on-chain deposits + 1Click status");
     return 0;
   }
   const bylines = db.prepare("SELECT name, payout, fee_bps FROM bylines WHERE network = ? AND source != 'fixture'").all(ctx.network) as {
@@ -394,6 +460,7 @@ export async function syncAll(db: DatabaseSync, ctx: SyncContext, opts: { record
   await syncRegistryEvents(db, ctx);
   await syncActivity(db, ctx);
   if (opts.recordedPath) await ingestRecorded(db, ctx, opts.recordedPath);
+  await syncChainSwaps(db, ctx);
   await syncExplorer(db, ctx);
   await syncSwapStatus(db, ctx);
   await syncIntentsBalances(db, ctx);

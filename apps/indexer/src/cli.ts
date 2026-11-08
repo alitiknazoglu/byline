@@ -18,6 +18,7 @@ import { openDb } from "./db.js";
 import { seedFixtures } from "./seed.js";
 import { bylineDetail, leaderboard, summary, type SortKey } from "./stats.js";
 import { createContext, syncAll } from "./sync.js";
+import { buildSnapshot } from "./snapshot.js";
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 try {
@@ -114,17 +115,8 @@ async function main() {
       const db = openDb(dbPath);
       const label = flags.get("label") ?? network;
       const out = flags.has("out") ? userPath(flags.get("out")!) : resolve(REPO, "apps/web/public/data", `${label}.json`);
-      const rows = leaderboard(db, network, "volume_usd", 1000);
-      const snapshot = {
-        label,
-        network,
-        registry: registryFor(network, process.env.REGISTRY_CONTRACT_ID),
-        generatedAt: new Date().toISOString(),
-        sample: rows.some((r) => r.sample),
-        summary: summary(db, network),
-        rows,
-        details: Object.fromEntries(rows.map((r) => [r.name, bylineDetail(db, network, r.name, 100)])),
-      };
+      const snapshot = buildSnapshot(db, network, registryFor(network, process.env.REGISTRY_CONTRACT_ID), label);
+      const rows = snapshot.rows;
       mkdirSync(dirname(out), { recursive: true });
       writeFileSync(out, JSON.stringify(snapshot, null, 1) + "\n");
       log(`exported ${rows.length} bylines to ${out}`);
