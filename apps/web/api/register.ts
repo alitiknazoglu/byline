@@ -7,8 +7,8 @@
  * UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN: shared per-IP rate limit (required on mainnet;
  * serverless instances don't share memory). RELAYER_POW_BITS: proof-of-work difficulty (default 20).
  */
-import { Relayer, memoryRateStore, upstashRateStore, type RateStore } from "@bylinecode/sdk/relay";
-import type { NetworkId } from "@bylinecode/sdk";
+import { Relayer, memoryRateStore, upstashRateStore, type RateStore } from "@by-line/sdk/relay";
+import type { NetworkId } from "@by-line/sdk";
 
 const relayers: Partial<Record<NetworkId, Relayer>> = {};
 /**

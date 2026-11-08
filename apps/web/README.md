@@ -1,4 +1,4 @@
-# @bylinecode/web
+# @by-line/web
 
 The site at **by-line.xyz**: the collection of bylines (a leaderboard), each byline's record, a live dry-quote panel, and wallet registration.
 

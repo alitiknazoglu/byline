@@ -1,5 +1,5 @@
 {
-  "name": "@bylinecode/indexer",
+  "name": "@by-line/indexer",
   "version": "0.1.0",
   "private": true,
   "description": "Counts what each byline's agent contributed: swaps, transactions, memo payments, fees.",
@@ -35,7 +35,7 @@
     "cli": "node --disable-warning=ExperimentalWarning dist/cli.js"
   },
   "dependencies": {
-    "@bylinecode/sdk": "0.1.0",
+    "@by-line/sdk": "0.1.0",
     "near-kit": "0.20.2"
   },
   "devDependencies": {

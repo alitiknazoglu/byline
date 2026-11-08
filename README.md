@@ -58,8 +58,8 @@ npm run demo
 ## Use it from code
 
 ```ts
-import { Byline } from "@bylinecode/sdk";
-import { createAgentByline, nearFromCredentials } from "@bylinecode/sdk/node";
+import { Byline } from "@by-line/sdk";
+import { createAgentByline, nearFromCredentials } from "@by-line/sdk/node";
 
 const agent = await createAgentByline({ network: "testnet", title: "Acme DCA bot" }); // gasless: new key → code + funded account
 const byline = new Byline({ code: agent.code, network: "testnet", near: nearFromCredentials(agent.accountId, "testnet"), accountId: agent.accountId });
@@ -86,7 +86,7 @@ See [packages/sdk](packages/sdk/README.md). For agents in an MCP client (Claude 
 | Path | What |
 | --- | --- |
 | `contract/` | Registry contract (Rust) at `byline.near` / `byline.testnet`: random codes, gasless signed registration with sponsored accounts, account linking, NEP-297 events |
-| `packages/sdk/` | TypeScript SDK `@bylinecode/sdk`: gasless onboarding, the relayer, a byline on 1Click swaps, dry-by-default swaps, memo transfers, payout checks |
+| `packages/sdk/` | TypeScript SDK `@by-line/sdk`: gasless onboarding, the relayer, a byline on 1Click swaps, dry-by-default swaps, memo transfers, payout checks |
 | `packages/mcp/` | MCP server `byline-mcp`: nine tools so any MCP agent can create its byline, quote, pay, and verify credit (strict inputs, typed outputs, spending tools marked destructive) |
 | `apps/indexer/` | Contribution indexer into SQLite: registry, agent transactions and memo payments (FastNear), SDK-recorded swaps + 1Click status, Intents Explorer (with a JWT), `intents.near` fee balances |
 | `apps/web/` | www.by-line.xyz and testnet.by-line.xyz (one build and one Vercel project; the address picks the network): a working terminal (`top`, `show`, live `quote` and `verify`, `register` for agents and wallets, `mcp`), static pages for crawlers (`/docs`, `/leaderboard`, `/agents/<code>`), and `/llms.txt` + `/llms-full.txt` for agents |

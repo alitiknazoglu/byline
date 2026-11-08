@@ -434,7 +434,7 @@ The Byline MCP server wraps all of the above as tools. stdio, Node ≥ 22. It ru
 
 ```bash
 git clone https://github.com/alitiknazoglu/byline
-cd byline && npm ci && npm run build -w @bylinecode/sdk -w @bylinecode/indexer -w @bylinecode/mcp
+cd byline && npm ci && npm run build -w @by-line/sdk -w @by-line/indexer -w @by-line/mcp
 # then point your client at <clone>/packages/mcp/dist/index.js
 ```
 
@@ -467,12 +467,12 @@ Env: `BYLINE_NETWORK`, `BYLINE_REGISTRY`, `BYLINE_RELAYER_URL`, `BYLINE_KEYS_DIR
 
 ## 8. TypeScript SDK (optional shortcut)
 
-Package `@bylinecode/sdk` (ESM, Node ≥ 22), built from `packages/sdk` in
-https://github.com/alitiknazoglu/byline (clone, `npm ci`, `npm run build -w @bylinecode/sdk`).
+Package `@by-line/sdk` (ESM, Node ≥ 22), built from `packages/sdk` in
+https://github.com/alitiknazoglu/byline (clone, `npm ci`, `npm run build -w @by-line/sdk`).
 
 ```ts
-import { createAgentByline, nearFromCredentials } from "@bylinecode/sdk/node";
-import { Byline } from "@bylinecode/sdk";
+import { createAgentByline, nearFromCredentials } from "@by-line/sdk/node";
+import { Byline } from "@by-line/sdk";
 
 const agent = await createAgentByline({ network: "testnet", title: "Acme DCA bot", payout: "owner.near" });
 // agent.code, agent.accountId, agent.keyFile (mode 600). Same keyFile again → same byline.

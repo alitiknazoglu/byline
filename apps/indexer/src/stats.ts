@@ -1,6 +1,6 @@
 /** Read side: what the web app and CLI show. */
 import type { DatabaseSync } from "node:sqlite";
-import type { NetworkId } from "@bylinecode/sdk";
+import type { NetworkId } from "@by-line/sdk";
 
 export interface LeaderboardRow {
   name: string;

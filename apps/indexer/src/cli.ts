@@ -9,11 +9,11 @@
  *   show NAME   [--network …] [--db FILE] [--json]
  *   export      [--network …] [--db FILE] [--label NAME] [--out FILE]        JSON snapshot for the web app
  */
-import { registryFor } from "@bylinecode/sdk";
+import { registryFor } from "@by-line/sdk";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import type { NetworkId } from "@bylinecode/sdk";
+import type { NetworkId } from "@by-line/sdk";
 import { openDb } from "./db.js";
 import { seedFixtures } from "./seed.js";
 import { bylineDetail, leaderboard, summary, type SortKey } from "./stats.js";

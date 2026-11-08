@@ -1,5 +1,5 @@
 /** FastNear transactions API: account history and full transactions with receipts and logs. No key needed. */
-import type { NetworkId } from "@bylinecode/sdk";
+import type { NetworkId } from "@by-line/sdk";
 
 export const FASTNEAR_TX_API: Record<NetworkId, string> = {
   mainnet: "https://tx.main.fastnear.com",

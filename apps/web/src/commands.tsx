@@ -1,8 +1,8 @@
 /** Every command the terminal understands. Each returns what it prints. */
 import type { ReactNode } from "react";
 import { Near, generateKey, isValidAccountId } from "near-kit";
-import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@bylinecode/sdk";
-import { FastNear, parseMemoTransfers, parseTx } from "@bylinecode/indexer/chain";
+import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@by-line/sdk";
+import { FastNear, parseMemoTransfers, parseTx } from "@by-line/indexer/chain";
 import { accountUrl, ago, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
 import { Cmd, Code, CodeRef, Err, Ext, Gap, Head, Json, KV, Line, Ok, Table, Trace, Warn, type Col, type Step } from "./ui";
 import { prefersReducedMotion } from "./clearing";
@@ -189,7 +189,7 @@ function registerGuide(wallet: WalletState): ReactNode {
         </a>
       </Line>
       <Line tone="dim">from code (Node)</Line>
-      <Code>{`import { createAgentByline } from "@bylinecode/sdk/node";
+      <Code>{`import { createAgentByline } from "@by-line/sdk/node";
 
 const agent = await createAgentByline({ network: "${NETWORK}", title: "My DCA bot" });
 agent.code       // e.g. "${DEMO_CODE}": attach it to every swap and payment

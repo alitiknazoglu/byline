@@ -13,7 +13,7 @@ import {
   type NetworkId,
   type PayoutChecker,
   type SwapStatus,
-} from "@bylinecode/sdk";
+} from "@by-line/sdk";
 import { getCursor, setCursor, tx } from "./db.js";
 import { FastNear } from "./fastnear.js";
 import { parseMemoTransfers, parseRegistryEvents, parseTx } from "./parse.js";

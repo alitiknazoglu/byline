@@ -3,9 +3,9 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { Byline, mainnetPayoutChecker, OneClick, RELAYER_URLS, REGISTRY_IDS, Registry, type BylineRecord, type NetworkId, type Recorder } from "@bylinecode/sdk";
-import { jsonlRecorder, nearFromCredentials } from "@bylinecode/sdk/node";
-import { FastNear } from "@bylinecode/indexer/chain";
+import { Byline, mainnetPayoutChecker, OneClick, RELAYER_URLS, REGISTRY_IDS, Registry, type BylineRecord, type NetworkId, type Recorder } from "@by-line/sdk";
+import { jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
+import { FastNear } from "@by-line/indexer/chain";
 
 export interface Config {
   network: NetworkId;

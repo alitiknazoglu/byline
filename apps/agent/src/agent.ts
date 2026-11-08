@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * byline-agent: a small scripted DCA agent built on @bylinecode/sdk.
+ * byline-agent: a small scripted DCA agent built on @by-line/sdk.
  *
  * Each round it quotes USDC → wNEAR through NEAR Intents with its byline attached, decides whether
  * the price is good enough to buy, and records everything for the indexer. Nothing moves by default.
@@ -23,8 +23,8 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { Byline, RELAYER_URLS, REGISTRY_IDS, type NetworkId, type QuoteResult, registryFor } from "@bylinecode/sdk";
-import { createAgentByline, jsonlRecorder, nearFromCredentials } from "@bylinecode/sdk/node";
+import { Byline, RELAYER_URLS, REGISTRY_IDS, type NetworkId, type QuoteResult, registryFor } from "@by-line/sdk";
+import { createAgentByline, jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
 
 const REPO = fileURLToPath(new URL("../../../", import.meta.url));
 try {

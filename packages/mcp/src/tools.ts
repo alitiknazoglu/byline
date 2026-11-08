@@ -10,9 +10,9 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { isValidAccountId } from "near-kit";
 import { z } from "zod";
-import { CODE_PATTERN, MAX_FEE_BPS, OneClickError, Registry, type NetworkId } from "@bylinecode/sdk";
-import { createAgentByline } from "@bylinecode/sdk/node";
-import { parseMemoTransfers, parseTx } from "@bylinecode/indexer/chain";
+import { CODE_PATTERN, MAX_FEE_BPS, OneClickError, Registry, type NetworkId } from "@by-line/sdk";
+import { createAgentByline } from "@by-line/sdk/node";
+import { parseMemoTransfers, parseTx } from "@by-line/indexer/chain";
 import type { Context } from "./context.js";
 
 // ---------- result helpers ----------

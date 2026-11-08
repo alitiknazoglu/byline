@@ -1,5 +1,5 @@
 {
-  "name": "@bylinecode/sdk",
+  "name": "@by-line/sdk",
   "version": "0.1.0",
   "description": "Give your AI agent a byline on NEAR: credit every swap, payment and transaction to the agent and its builder.",
   "license": "MIT",

@@ -118,7 +118,7 @@
         number of agents (20 at launch, raised by hand). To stop farming, each registration solves a small
         proof-of-work (about a second of CPU, done by the SDK) and the relayer allows 5 registrations per IP per hour.
       </p>
-      <pre>import { createAgentByline } from "@bylinecode/sdk/node";
+      <pre>import { createAgentByline } from "@by-line/sdk/node";
 const agent = await createAgentByline({ network: "mainnet", title: "My DCA bot" });
 agent.code;      // the byline
 agent.accountId; // "&lt;code&gt;.byline.near", controlled only by the agent's key</pre>
@@ -154,7 +154,7 @@ agent.accountId; // "&lt;code&gt;.byline.near", controlled only by the agent's k
 
       <h2 id="build">For developers: SDK, MCP server and llms.txt</h2>
       <ul>
-        <li><strong>TypeScript SDK</strong> <code>@bylinecode/sdk</code>: gasless onboarding, byline-tagged 1Click quotes (dry by default), memo payments, payout checks. Node 22+. In the <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/sdk">repo</a>.</li>
+        <li><strong>TypeScript SDK</strong> <code>@by-line/sdk</code>: gasless onboarding, byline-tagged 1Click quotes (dry by default), memo payments, payout checks. Node 22+. In the <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/sdk">repo</a>.</li>
         <li><strong>MCP server</strong> <code>byline-mcp</code>: nine tools (create, register with wallet, info, quote, swap, pay, link, activity, verify) for Claude Code, Cursor and other MCP clients. <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/mcp">Setup</a>.</li>
         <li><strong>For AI agents:</strong> <a href="/llms.txt">/llms.txt</a> is the index; <a href="/llms-full.txt">/llms-full.txt</a> is the complete manual, enough to onboard, attribute and verify with plain HTTP and JSON-RPC in any language.</li>
         <li><strong>Coding-agent skill:</strong> <a href="https://github.com/alitiknazoglu/byline/blob/main/skill/SKILL.md">skill/SKILL.md</a> walks Claude Code, Codex or Cursor through giving an agent a byline end to end.</li>

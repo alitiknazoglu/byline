@@ -11,7 +11,7 @@ A **byline** is a random code the registry generates, such as `k7m2x9qa`, held a
 - **Token payments** carry the memo `byline:<code>`.
 - **Its own account**, `<code>.byline.near`, can only be created by the registry, so every transaction it signs is provably the agent's.
 
-The SDK is `@bylinecode/sdk`. The full rules are in `contract/RULES.md` of the Byline repo.
+The SDK is `@by-line/sdk`. The full rules are in `contract/RULES.md` of the Byline repo.
 
 ## Safety rules (always)
 
@@ -36,11 +36,11 @@ The server tells the model the flow when it connects.
 Use this when the agent has nothing yet. It signs one message, and the registry pays for its byline and creates its funded account (sponsored, while the quota lasts).
 
 ```bash
-npm install @bylinecode/sdk
+npm install @by-line/sdk
 ```
 
 ```ts
-import { createAgentByline } from "@bylinecode/sdk/node";
+import { createAgentByline } from "@by-line/sdk/node";
 
 const agent = await createAgentByline({
   network: "testnet",
@@ -76,8 +76,8 @@ Use `sign-with-legacy-keychain` if their key is in `~/.near-credentials`. The tr
 **From an agent holding a funded account (SDK):**
 
 ```ts
-import { Registry } from "@bylinecode/sdk";
-import { nearFromCredentials } from "@bylinecode/sdk/node";
+import { Registry } from "@by-line/sdk";
+import { nearFromCredentials } from "@by-line/sdk/node";
 const registry = new Registry({ network: "testnet", near: nearFromCredentials("funded-agent.testnet", "testnet") });
 const { code } = await registry.register({ title: "Acme DCA bot", payout: "acme-team.near" });
 ```
@@ -93,8 +93,8 @@ const { code } = await registry.register({ title: "Acme DCA bot", payout: "acme-
 ## Use the byline in the agent
 
 ```ts
-import { Byline } from "@bylinecode/sdk";
-import { jsonlRecorder, nearFromCredentials } from "@bylinecode/sdk/node";
+import { Byline } from "@by-line/sdk";
+import { jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
 
 const byline = new Byline({
   code: agent.code,

@@ -6,7 +6,7 @@
 import { createHash } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import type { DatabaseSync } from "node:sqlite";
-import type { NetworkId } from "@bylinecode/sdk";
+import type { NetworkId } from "@by-line/sdk";
 import { tx } from "./db.js";
 
 const USDC = "nep141:17208628f84f5d6ad33f0da3bbbeb27ffcb398eac501a31bd6ad2011e36133a1";

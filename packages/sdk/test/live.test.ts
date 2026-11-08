@@ -3,8 +3,8 @@
  * No funds move unless LIVE_WRITE=1, and then only on testnet:
  * the demo agent sends 0.001 wNEAR to the registry with memo "byline:<code>".
  *
- *   npm run test:live -w @bylinecode/sdk
- *   LIVE_WRITE=1 npm run test:live -w @bylinecode/sdk   (needs the demo agent key: ~/.near-credentials/testnet/nw5s2ea1.byline.testnet.json)
+ *   npm run test:live -w @by-line/sdk
+ *   LIVE_WRITE=1 npm run test:live -w @by-line/sdk   (needs the demo agent key: ~/.near-credentials/testnet/nw5s2ea1.byline.testnet.json)
  */
 import { mkdtemp, readFile } from "node:fs/promises";
 import { tmpdir } from "node:os";

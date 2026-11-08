@@ -1,6 +1,6 @@
-# @bylinecode/agent
+# @by-line/agent
 
-A small scripted DCA agent built on `@bylinecode/sdk`. Each round it:
+A small scripted DCA agent built on `@by-line/sdk`. Each round it:
 1. quotes USDC → wNEAR through NEAR Intents (1Click) with its byline attached;
 2. decides whether to buy, skipping a round whose price is more than 1% worse than the best so far;
 3. records the quote for the indexer.

@@ -3,7 +3,7 @@
  * or (indexNetwork) from scratch in memory straight off the chain, which is what /api/snapshot runs.
  */
 import type { DatabaseSync } from "node:sqlite";
-import { registryFor, type NetworkId } from "@bylinecode/sdk";
+import { registryFor, type NetworkId } from "@by-line/sdk";
 import { openDb } from "./db.js";
 import { bylineDetail, leaderboard, summary, type BylineDetail, type LeaderboardRow } from "./stats.js";
 import { createContext, syncAll } from "./sync.js";

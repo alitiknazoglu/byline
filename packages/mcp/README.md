@@ -1,4 +1,4 @@
-# @bylinecode/mcp
+# @by-line/mcp
 
 An MCP server that lets AI agents use Byline on NEAR. Through it an agent can:
 - create its own identity for free;
@@ -77,7 +77,7 @@ The server tells the model the flow on connect, so nobody has to remember tool n
 ## Tests
 
 ```bash
-npm test -w @bylinecode/mcp
+npm test -w @by-line/mcp
 ```
 
 This spawns the built server over stdio with a real MCP client and calls every tool against live testnet and 1Click, with dry quotes only and no keys. Then it fuzzes every non-spending tool with missing, wrong-type, unknown and out-of-range input, which must all be rejected cleanly.

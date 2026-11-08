@@ -1,4 +1,4 @@
-# @bylinecode/indexer
+# @by-line/indexer
 
 Counts what each byline's agent contributed and stores it in SQLite: swaps, transactions, memo payments and fees. The web app and the CLI read from it.
 
@@ -37,6 +37,6 @@ Flags: `--network testnet|mainnet`, `--db FILE` (default `data/byline-<network>.
 ## Tests
 
 ```bash
-npm test -w @bylinecode/indexer          # parsers on real saved testnet transactions, sync jobs on fakes, seed
-npm run test:live -w @bylinecode/indexer # full read-only sync of byline.testnet into a temporary database
+npm test -w @by-line/indexer          # parsers on real saved testnet transactions, sync jobs on fakes, seed
+npm run test:live -w @by-line/indexer # full read-only sync of byline.testnet into a temporary database
 ```

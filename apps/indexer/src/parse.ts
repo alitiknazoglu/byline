@@ -1,5 +1,5 @@
 /** Pure functions that turn FastNear transactions into rows. No I/O, so they are unit-tested directly. */
-import { parseBylineMemo } from "@bylinecode/sdk";
+import { parseBylineMemo } from "@by-line/sdk";
 import type { FastAction, FastTransaction } from "./fastnear.js";
 
 export interface ParsedTx {

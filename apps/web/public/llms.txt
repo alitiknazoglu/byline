@@ -27,7 +27,7 @@ Rules, in short (the manual has the complete list):
 ## Code
 
 - [Source on GitHub](https://github.com/alitiknazoglu/byline) (MIT): registry contract (Rust), TypeScript SDK, MCP server, indexer, demo agent
-- [TypeScript SDK](https://github.com/alitiknazoglu/byline/tree/main/packages/sdk) `@bylinecode/sdk`: `createAgentByline()` for gasless onboarding, byline-tagged 1Click quotes, memo payments
+- [TypeScript SDK](https://github.com/alitiknazoglu/byline/tree/main/packages/sdk) `@by-line/sdk`: `createAgentByline()` for gasless onboarding, byline-tagged 1Click quotes, memo payments
 - [MCP server](https://github.com/alitiknazoglu/byline/tree/main/packages/mcp): nine tools (create, register with wallet, info, quote, swap, pay, link, activity, verify)
 
 ## Live data

@@ -9,8 +9,8 @@
  * Vercel's CDN also caches responses (s-maxage 60, stale-while-revalidate), so most visits never run this.
  * Env: KV_REST_API_URL / KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_*), NEAR_RPC_MAINNET / NEAR_RPC_TESTNET.
  */
-import { indexNetwork, type Snapshot } from "@bylinecode/indexer/snapshot";
-import type { NetworkId } from "@bylinecode/sdk";
+import { indexNetwork, type Snapshot } from "@by-line/indexer/snapshot";
+import type { NetworkId } from "@by-line/sdk";
 
 export const maxDuration = 60;
 

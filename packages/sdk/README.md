@@ -1,9 +1,9 @@
-# @bylinecode/sdk
+# @by-line/sdk
 
 Give your AI agent a byline on NEAR. Every swap, payment and transaction it makes is credited to the agent and to its builder, and swaps through NEAR Intents pay the builder a share of the fee.
 
 ```bash
-npm install @bylinecode/sdk
+npm install @by-line/sdk
 ```
 
 ## Get a byline
@@ -11,7 +11,7 @@ npm install @bylinecode/sdk
 An agent with nothing but a key onboards itself; no NEAR is needed. The registry generates the code and pays for the agent's own account:
 
 ```ts
-import { createAgentByline } from "@bylinecode/sdk/node";
+import { createAgentByline } from "@by-line/sdk/node";
 
 const agent = await createAgentByline({ network: "mainnet", title: "Acme DCA bot", payout: "acme-team.near" });
 agent.code;       // "k7m2x9qa", the byline every action carries
@@ -25,8 +25,8 @@ agent.keyFile;    // ~/.near-credentials/mainnet/k7m2x9qa.byline.near.json (mode
 ## Quick start
 
 ```ts
-import { Byline } from "@bylinecode/sdk";
-import { nearFromCredentials } from "@bylinecode/sdk/node";
+import { Byline } from "@by-line/sdk";
+import { nearFromCredentials } from "@by-line/sdk/node";
 
 const byline = new Byline({ code: agent.code, network: "mainnet", near: nearFromCredentials(agent.accountId, "mainnet"), accountId: agent.accountId });
 
@@ -66,7 +66,7 @@ const request = await byline.attach(myQuoteRequest); // adds referral + appFees
 ## Node helpers
 
 ```ts
-import { jsonlRecorder, nearFromCredentials } from "@bylinecode/sdk/node";
+import { jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
 
 const near = nearFromCredentials("nw5s2ea1.byline.testnet", "testnet"); // ~/.near-credentials, keys stay on disk
 const byline = new Byline({ code: "nw5s2ea1", network: "testnet", near, recorder: jsonlRecorder("data/events.jsonl") });
@@ -79,7 +79,7 @@ const byline = new Byline({ code: "nw5s2ea1", network: "testnet", near, recorder
 | `createByline`, `createAgentByline` (node) | Gasless onboarding: sign a register message, the relayer submits it, the registry pays |
 | `Byline` | One agent: `attribution()`, `attach()`, `quote()`, `swap()`, `status()`, `transfer()`, `link()` |
 | `Registry` | The registry contract. Views: `getByline`, `getBylines`, `getBylinesForOwner`, `getBylineForAccount`, `getBylineForKey`, `getAttribution`, `getSponsorStatus`. Calls: `register`, `update`, `createAccount`, `inviteAccount`, `linkAccount`, `unlinkAccount`, `registerSigned` (relayer) |
-| `Relayer` (`@bylinecode/sdk/relay`) | The relayer behind gasless onboarding: verifies, rate-limits and submits with a function-call key on the registry |
+| `Relayer` (`@by-line/sdk/relay`) | The relayer behind gasless onboarding: verifies, rate-limits and submits with a function-call key on the registry |
 | `OneClick` | Minimal 1Click client: `tokens`, `token`, `quote`, `submitDeposit`, `status`, `waitForStatus` |
 | `withByline`, `resolveAttribution`, `mainnetPayoutChecker`, `builderShare` | The attribution building blocks |
 | `isValidCode`, `codeForKey`, `bylineMemo`, `parseBylineMemo`, `agentAccountId` | Code and memo rules, the same ones the contract enforces |
@@ -87,7 +87,7 @@ const byline = new Byline({ code: "nw5s2ea1", network: "testnet", near, recorder
 ## Tests
 
 ```bash
-npm test -w @bylinecode/sdk                     # unit tests, no network
-npm run test:live -w @bylinecode/sdk            # live reads: byline.testnet, 1Click dry quotes, mainnet RPC
-LIVE_WRITE=1 npm run test:live -w @bylinecode/sdk  # also sends 0.001 wNEAR on testnet with the memo (needs the demo agent's key)
+npm test -w @by-line/sdk                     # unit tests, no network
+npm run test:live -w @by-line/sdk            # live reads: byline.testnet, 1Click dry quotes, mainnet RPC
+LIVE_WRITE=1 npm run test:live -w @by-line/sdk  # also sends 0.001 wNEAR on testnet with the memo (needs the demo agent's key)
 ```

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import type { Near } from "near-kit";
-import { OneClick, Registry, type BylineEvent } from "@bylinecode/sdk";
+import { OneClick, Registry, type BylineEvent } from "@by-line/sdk";
 import {
   FastNear,
   ingestRecorded,

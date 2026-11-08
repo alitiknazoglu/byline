@@ -1,5 +1,5 @@
 {
-  "name": "@bylinecode/agent",
+  "name": "@by-line/agent",
   "version": "0.1.0",
   "private": true,
   "description": "A scripted DCA agent that uses the Byline SDK, so every quote, swap and payment it makes is credited to its byline.",
@@ -12,7 +12,7 @@
     "start": "node dist/agent.js"
   },
   "dependencies": {
-    "@bylinecode/sdk": "0.1.0",
+    "@by-line/sdk": "0.1.0",
     "near-kit": "0.20.2"
   },
   "devDependencies": {
