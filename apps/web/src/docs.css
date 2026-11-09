@@ -1,59 +1,55 @@
-/* /docs: a readable page in the terminal's palette (same tokens as styles.css). */
-:root {
-  --bg: #1e1e1e;
-  --bar: #2c2c2c;
-  --bar-edge: #0f0f0f;
-  --fg: #e6e6e6;
-  --hi: #ffffff;
-  --dim: #8f8f8f;
-  --rule: #2f2f2f;
-  --mono: "JetBrains Mono Variable", "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
-  --sans: -apple-system, BlinkMacSystemFont, "Helvetica Neue", system-ui, sans-serif;
-  color-scheme: dark;
-}
-* { box-sizing: border-box; }
-body {
-  margin: 0;
-  background: var(--bg);
-  color: var(--fg);
-  font-family: var(--mono);
-  font-size: 14px;
-  line-height: 1.65;
-  font-variant-ligatures: none;
-  -webkit-font-smoothing: antialiased;
-}
-a { color: var(--hi); text-decoration-color: #6a6a6a; text-underline-offset: 3px; }
-a:hover { text-decoration-color: currentColor; }
-a:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
-code { color: var(--hi); }
+/* /docs: the terminal's look for a long read. Loaded after styles.css, which provides the tokens,
+   the header (.bar, .close, .brand, .nav, .navlink) and the status bar (.status, .seg). */
 
-.bar {
-  position: sticky; top: 0; z-index: 1;
-  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
-  min-height: 38px; padding: 4px 16px;
-  background: var(--bar); border-bottom: 1px solid var(--bar-edge);
-  font-family: var(--sans); font-size: 13px;
-}
-.brand { display: inline-flex; align-items: center; gap: 7px; color: var(--fg); font-weight: 600; text-decoration: none; }
-.logo { width: 16px; height: 16px; }
-.nav { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-left: auto; }
-.nav a { color: var(--dim); text-decoration: none; }
-.nav a:hover, .nav a[aria-current="page"] { color: var(--fg); }
+html, body { height: auto; }
+body { padding-bottom: 32px; }
 
-.doc { max-width: 78ch; margin: 0 auto; padding: 32px 16px 80px; }
-h1 { margin: 0 0 14px; font-size: 22px; color: var(--hi); }
-h2 { margin: 36px 0 10px; font-size: 16px; color: var(--hi); scroll-margin-top: 56px; }
-h3 { margin: 20px 0 6px; font-size: 14px; color: var(--hi); }
-.lede { font-size: 15px; }
-.toc { color: var(--dim); }
-.toc a { color: var(--dim); }
-ul { padding-left: 2ch; }
-li { margin: 4px 0; }
+/* The header stays put while reading, exactly as in the terminal. */
+.bar { position: sticky; top: 0; z-index: 2; }
+/* In the terminal the red light is a button; here it's a link back to the terminal. */
+a.close { display: inline-block; flex: none; }
+a.navlink { display: inline-block; }
+.navlink[aria-current="page"] { color: var(--fg); }
+
+/* The page reads like terminal output: same padding, size and line height as the scrollback. */
+.doc { max-width: 100ch; padding: 18px var(--pad) 48px; }
+.doc .cmdline { margin-bottom: 14px; }
+.doc .cmdline .ps { color: var(--hi); }
+
+h1, h2, h3 { font-size: 14px; line-height: 1.55; }
+h1 { margin: 0 0 10px; color: var(--hi); font-weight: 700; }
+/* Section headings look like the terminal's `> heading` lines. */
+h2 { margin: 26px 0 6px; color: var(--hi); font-weight: 700; scroll-margin-top: 52px; }
+h2::before { content: "> "; color: var(--dim); }
+h3 { margin: 16px 0 4px; color: var(--fg); font-weight: 700; }
+h3::before { content: "· "; color: var(--dim); }
+
+p, ul, table, pre { margin: 6px 0 10px; }
+.lede { color: var(--fg); }
+.toc, .toc a { color: var(--dim); }
+ul { padding-left: 2.4ch; list-style: none; }
+li { position: relative; margin: 2px 0; }
+li::before { content: "-"; position: absolute; left: -2ch; color: var(--dim); }
+strong { color: var(--hi); }
+code { color: var(--hi); font-family: inherit; }
+
+/* Tables and code blocks: the same treatment as the terminal's tables and snippets. */
+table { border-collapse: collapse; display: block; max-width: 100%; overflow-x: auto; font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 400; color: var(--dim); padding: 0 2.4ch 2px 0; border-bottom: 1px solid var(--rule); white-space: nowrap; }
+td { padding: 3px 2.4ch 3px 0; vertical-align: top; }
 pre {
-  overflow-x: auto; margin: 12px 0; padding: 12px 14px;
-  background: #171717; border: 1px solid var(--rule); border-radius: 4px; color: var(--fg);
+  padding: 10px 12px;
+  border-left: 1px solid var(--faint);
+  background: #181818;
+  color: #cfcfcf;
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
 }
-table { width: 100%; border-collapse: collapse; margin: 10px 0; display: block; overflow-x: auto; }
-th, td { padding: 6px 14px 6px 0; border-bottom: 1px solid var(--rule); text-align: left; vertical-align: top; }
-th { color: var(--dim); font-weight: 400; }
-.foot { margin-top: 48px; color: var(--dim); }
+.foot { margin-top: 28px; color: var(--dim); }
+
+/* The status bar sits at the bottom of the window, as in the terminal. */
+.status { position: fixed; left: 0; right: 0; bottom: 0; z-index: 2; }
+.status .seg-link { color: var(--dim); text-decoration: none; }
+.status .seg-link:hover { color: var(--fg); }

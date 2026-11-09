@@ -101,6 +101,19 @@ function Banner() {
 /** Commands a link may run on page load: they only read and display. */
 const DEEP_LINK_SAFE = new Set(["show", "top", "quote", "verify", "help", "about", "mcp", "sponsor", "whoami", "use"]);
 
+/**
+ * May a link run this command on load? Read-only commands, plus `connect` (it only opens the wallet
+ * picker) and a bare `register` (the guide). `register --wallet` and anything that moves money only
+ * goes into the prompt, for the visitor to read and run.
+ */
+function deepLinkSafe(line: string): boolean {
+  const [name, ...rest] = line.split(" ");
+  if (DEEP_LINK_SAFE.has(name!)) return true;
+  if (name === "connect") return rest.length === 0;
+  if (name === "register") return rest.length === 0;
+  return false;
+}
+
 /** The command a page path stands for: /agents/<code> → `show <code>`. The leaderboard already runs at boot. */
 function pathCommand(pathname: string): string | null {
   const m = /^\/agents\/([0-9a-z]+)\/?$/.exec(pathname);
@@ -289,7 +302,7 @@ export function Terminal() {
     if (deep && COMMAND_NAMES.includes(deep.split(" ")[0]!)) {
       // A link may only show things. Anything that signs, pays, downloads a key or changes the wallet is
       // typed into the prompt for the reader to run (without --yes), never run on load.
-      if (DEEP_LINK_SAFE.has(deep.split(" ")[0]!)) run(deep, { record: false });
+      if (deepLinkSafe(deep)) run(deep, { record: false });
       else setInput(deep.replace(/(^|\s)--yes(?=\s|$)/g, "").trim());
     }
     void loadSnapshot(NETWORK).then((s) => s && setIndexedAt(s.generatedAt));
@@ -402,7 +415,11 @@ export function Terminal() {
               className={`navlink wallet${wallet.accountId ? " on" : ""}`}
               onClick={() => run(wallet.accountId ? "whoami" : "connect")}
             >
-              {wallet.accountId ?? "connect wallet"}
+              {wallet.accountId ?? (
+                <>
+                  connect<span className="hide-sm"> wallet</span>
+                </>
+              )}
             </button>
           </nav>
         </header>

@@ -47,20 +47,23 @@
   </head>
   <body>
     <header class="bar">
+      <a class="close" href="/" aria-label="Back to the terminal" title="Back to the terminal"></a>
       <a class="brand" href="/" aria-label="byline, home">
         <svg class="logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#e6e6e6"/><path d="M8 11l5 5-5 5" fill="none" stroke="#1e1e1e" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><rect x="15" y="19.5" width="9" height="2.6" rx="1" fill="#1e1e1e"/></svg>
         <span>byline</span>
       </a>
       <nav class="nav" aria-label="Byline">
-        <a href="/">terminal</a>
-        <a href="/leaderboard">leaderboard</a>
-        <a href="/docs" aria-current="page">docs</a>
-        <a href="/llms.txt">llms.txt</a>
-        <a href="https://github.com/alitiknazoglu/byline">github</a>
+        <a class="navlink" href="/leaderboard">leaderboard</a>
+        <a class="navlink" href="/docs" aria-current="page">docs</a>
+        <a class="navlink" href="/#register">register</a>
+        <a class="navlink" href="/#mcp">mcp</a>
+        <a class="navlink" href="/llms.txt" target="_blank" rel="noreferrer" title="Instructions for AI agents">llms.txt</a>
+        <a class="navlink wallet" href="/#connect">connect<span class="hide-sm"> wallet</span></a>
       </nav>
     </header>
 
     <main class="doc">
+      <div class="ln cmdline"><span class="ps">byline@<span data-net>mainnet</span> $</span> docs</div>
       <h1>How Byline works</h1>
       <p class="lede">
         Byline is an on-chain identity for AI agents on NEAR. A registry contract gives each agent a code and its own
@@ -126,7 +129,7 @@ agent.accountId; // "&lt;code&gt;.byline.near", controlled only by the agent's k
       <p>
         A human, or an agent whose owner gave it a funded wallet, calls <code>register</code> on the registry with a
         0.01 NEAR deposit for storage (the excess is refunded). The registry still picks the code. On the site, type
-        <code>connect</code> then <code>register</code> in the terminal.
+        <code>connect</code> then <code>register --wallet</code> in the terminal.
       </p>
 
       <h2 id="fees">How do builders earn from their agent's swaps?</h2>
@@ -154,10 +157,10 @@ agent.accountId; // "&lt;code&gt;.byline.near", controlled only by the agent's k
 
       <h2 id="build">For developers: SDK, MCP server and llms.txt</h2>
       <ul>
-        <li><strong>TypeScript SDK</strong> <code>@by-line/sdk</code>: gasless onboarding, byline-tagged 1Click quotes (dry by default), memo payments, payout checks. Node 22+. In the <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/sdk">repo</a>.</li>
-        <li><strong>MCP server</strong> <code>byline-mcp</code>: nine tools (create, register with wallet, info, quote, swap, pay, link, activity, verify) for Claude Code, Cursor and other MCP clients. <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/mcp">Setup</a>.</li>
+        <li><strong>TypeScript SDK</strong> <code>npm install @by-line/sdk</code>: gasless onboarding, byline-tagged 1Click quotes (dry by default), memo payments, payout checks. Node 22+. <a href="https://www.npmjs.com/package/@by-line/sdk" target="_blank" rel="noreferrer">npm</a> · <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/sdk" target="_blank" rel="noreferrer">source</a>.</li>
+        <li><strong>MCP server</strong> <code>npx -y @by-line/mcp</code>: nine tools (create, register with wallet, info, quote, swap, pay, link, activity, verify) for Claude Code, Cursor and other MCP clients. <a href="https://github.com/alitiknazoglu/byline/tree/main/packages/mcp" target="_blank" rel="noreferrer">Setup</a>.</li>
         <li><strong>For AI agents:</strong> <a href="/llms.txt">/llms.txt</a> is the index; <a href="/llms-full.txt">/llms-full.txt</a> is the complete manual, enough to onboard, attribute and verify with plain HTTP and JSON-RPC in any language.</li>
-        <li><strong>Coding-agent skill:</strong> <a href="https://github.com/alitiknazoglu/byline/blob/main/skill/SKILL.md">skill/SKILL.md</a> walks Claude Code, Codex or Cursor through giving an agent a byline end to end.</li>
+        <li><strong>Coding-agent skill:</strong> <a href="https://github.com/alitiknazoglu/byline/blob/main/skill/SKILL.md" target="_blank" rel="noreferrer">skill/SKILL.md</a> walks Claude Code, Codex or Cursor through giving an agent a byline end to end.</li>
       </ul>
       <pre>git clone https://github.com/alitiknazoglu/byline
 cd byline &amp;&amp; npm ci
@@ -173,18 +176,26 @@ npm run demo     # no keys, no funds: sample room, dry quotes, the live testnet 
 
       <h2 id="registry">The registry contract</h2>
       <p>
-        <a href="https://nearblocks.io/address/byline.near?tab=contract">byline.near</a> on mainnet is deployed from a
+        <a href="https://nearblocks.io/address/byline.near?tab=contract" target="_blank" rel="noreferrer">byline.near</a> on mainnet is deployed from a
         reproducible build of commit
-        <a href="https://github.com/alitiknazoglu/byline/tree/8980182066d193d479ea54fea3a2a36fd7cb4b01">8980182</a>,
+        <a href="https://github.com/alitiknazoglu/byline/tree/8980182066d193d479ea54fea3a2a36fd7cb4b01" target="_blank" rel="noreferrer">8980182</a>,
         source verified on NearBlocks (code hash <code>45vaJt8P6cLCqw7SeEBshxuhz7qLwZaLsCQ6LSJN7Eha</code>). The testnet
         registry is <code>byline.testnet</code>. Every registration and update is logged as a NEP-297 event, so any
         indexer can rebuild the full history.
       </p>
 
       <p class="foot">
-        <a href="/">Open the terminal</a> · <a href="/leaderboard">Leaderboard</a> · <a href="https://github.com/alitiknazoglu/byline">GitHub</a> (MIT) ·
-        <a href="https://testnet.by-line.xyz">Testnet site</a>
+        <a href="/">Open the terminal</a> · <a href="/leaderboard">Leaderboard</a> · <a href="https://github.com/alitiknazoglu/byline" target="_blank" rel="noreferrer">GitHub</a> (MIT) ·
+        <a href="https://testnet.by-line.xyz" target="_blank" rel="noreferrer">Testnet site</a>
       </p>
     </main>
+
+    <footer class="status">
+      <span class="seg" data-net-label>NEAR mainnet</span>
+      <a class="seg seg-link" data-other-site href="https://testnet.by-line.xyz/docs">testnet ↗</a>
+      <a class="seg seg-link" data-registry href="https://nearblocks.io/address/byline.near?tab=contract" target="_blank" rel="noreferrer">registry byline.near ✓ verified</a>
+      <a class="seg seg-link hide-sm" href="https://github.com/alitiknazoglu/byline" target="_blank" rel="noreferrer">github ↗</a>
+      <span class="seg right">docs · <a class="seg-link" href="/">open the terminal</a></span>
+    </footer>
   </body>
 </html>

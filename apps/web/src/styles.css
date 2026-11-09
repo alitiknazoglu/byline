@@ -291,8 +291,12 @@ b { font-weight: 700; color: var(--hi); }
   .bar { gap: 8px; }
   .brand { position: static; transform: none; }
   .brand span { display: none; }
-  .nav { gap: 0; }
-  .navlink { padding: 4px 5px; }
+  /* Six links on a phone: tighter, and if they still don't fit they scroll inside the bar
+     instead of widening the page. */
+  .bar { overflow: hidden; }
+  .nav { gap: 0; min-width: 0; overflow-x: auto; scrollbar-width: none; }
+  .nav::-webkit-scrollbar { display: none; }
+  .navlink { padding: 4px 4px; font-size: 12px; flex: none; }
   .wallet { margin-left: 2px; }
   .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
   .chip { flex: none; }

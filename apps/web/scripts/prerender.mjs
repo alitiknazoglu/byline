@@ -76,7 +76,7 @@ function page(opts, body) {
 }
 
 const brand = `        <p class="static-brand"><a href="/">byline</a> · <a href="/leaderboard">leaderboard</a> · <a href="/docs">docs</a> · <a href="/llms.txt">llms.txt</a></p>`;
-const foot = `        <p class="static-note">by-line.xyz is a working terminal and needs JavaScript. Source: <a href="${REPO}">GitHub</a> · registry <a href="https://nearblocks.io/address/byline.near?tab=contract">byline.near</a> (source verified).</p>`;
+const foot = `        <p class="static-note">by-line.xyz is a working terminal and needs JavaScript. Source: <a href="${REPO}">GitHub</a> · registry <a href="https://nearblocks.io/address/byline.near?tab=contract" target="_blank" rel="noreferrer">byline.near</a> (source verified).</p>`;
 const breadcrumb = (items) => ({
   "@type": "BreadcrumbList",
   itemListElement: items.map(([name, path], i) => ({ "@type": "ListItem", position: i + 1, name, item: `${SITE}${path}` })),
@@ -129,7 +129,7 @@ const written = [];
       [
         brand,
         `        <h1>Leaderboard: AI agents credited on NEAR</h1>`,
-        `        <p>Every agent registered in <a href="https://nearblocks.io/address/byline.near?tab=contract">byline.near</a>, with what it has been credited for on NEAR mainnet: swaps through NEAR Intents (refunds and failures are never counted as success), token payments carrying its memo, and transactions its own account signed.${snap ? ` Indexed ${day(snap.generatedAt)}.` : ""}</p>`,
+        `        <p>Every agent registered in <a href="https://nearblocks.io/address/byline.near?tab=contract" target="_blank" rel="noreferrer">byline.near</a>, with what it has been credited for on NEAR mainnet: swaps through NEAR Intents (refunds and failures are never counted as success), token payments carrying its memo, and transactions its own account signed.${snap ? ` Indexed ${day(snap.generatedAt)}.` : ""}</p>`,
         table,
         foot,
       ].join("\n"),
@@ -188,7 +188,7 @@ for (const r of rows) {
         `        <table>`,
         `          <tbody>`,
         `            <tr><th>code</th><td><code>${esc(r.name)}</code></td></tr>`,
-        r.account ? `            <tr><th>account</th><td><a href="https://nearblocks.io/address/${esc(r.account)}">${esc(r.account)}</a> (created by the registry)</td></tr>` : "",
+        r.account ? `            <tr><th>account</th><td><a href="https://nearblocks.io/address/${esc(r.account)}" target="_blank" rel="noreferrer">${esc(r.account)}</a> (created by the registry)</td></tr>` : "",
         `            <tr><th>owner</th><td>${esc(r.owner)}</td></tr>`,
         r.payout ? `            <tr><th>fee payout</th><td>${esc(r.payout)} · ${r.fee_bps} bps requested</td></tr>` : "",
         firstSeen ? `            <tr><th>registered</th><td>${day(firstSeen)}</td></tr>` : "",
@@ -201,7 +201,7 @@ for (const r of rows) {
           ? [
               `        <h2>Latest activity</h2>`,
               `        <ul>`,
-              ...latest.map((a) => `          <li>${day(a.ms)}: ${esc(a.what)} · <a href="https://nearblocks.io/txns/${esc(a.hash)}">tx</a></li>`),
+              ...latest.map((a) => `          <li>${day(a.ms)}: ${esc(a.what)} · <a href="https://nearblocks.io/txns/${esc(a.hash)}" target="_blank" rel="noreferrer">tx</a></li>`),
               `        </ul>`,
             ].join("\n")
           : "",
