@@ -42,13 +42,14 @@ interface RunOpts {
   boot?: boolean;
 }
 
-const SUGGESTIONS = [
+/** The quick buttons under the prompt. mcp lives in the header; disconnect appears while a wallet is connected. */
+const suggestions = (connected: boolean) => [
   "quote",
   `show ${DEMO_CODE}`,
   ...(DEMO_TX ? [`verify ${DEMO_TX}`] : []),
   "pay",
   "register",
-  "mcp",
+  ...(connected ? ["disconnect"] : []),
   "help",
 ];
 const HISTORY_KEY = "byline.history";
@@ -304,6 +305,8 @@ export function Terminal() {
       // typed into the prompt for the reader to run (without --yes), never run on load.
       if (deepLinkSafe(deep)) run(deep, { record: false });
       else setInput(deep.replace(/(^|\s)--yes(?=\s|$)/g, "").trim());
+      // The link has done its job: drop #mcp, #register… so the address stays clean and a reload doesn't re-run it.
+      if (window.location.hash) window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }
     void loadSnapshot(NETWORK).then((s) => s && setIndexedAt(s.generatedAt));
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -388,9 +391,6 @@ export function Terminal() {
             >
               leaderboard
             </a>
-            <a className="navlink" href="/docs">
-              docs
-            </a>
             <button
               type="button"
               className="navlink"
@@ -401,6 +401,9 @@ export function Terminal() {
             <button type="button" className="navlink" onClick={() => run("mcp")}>
               mcp
             </button>
+            <a className="navlink" href="/docs">
+              docs
+            </a>
             <a
               className="navlink"
               href="/llms.txt"
@@ -489,7 +492,7 @@ export function Terminal() {
                 >
                   {(completions.length && input
                     ? completions
-                    : SUGGESTIONS
+                    : suggestions(Boolean(wallet.accountId))
                   ).map((s) => (
                     <button
                       key={s}
