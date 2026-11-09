@@ -61,6 +61,10 @@ if (critical.length) problems.push(`${critical.length} critical behavioural issu
 if (errorHandling !== undefined && errorHandling < 10) problems.push(`error handling ${errorHandling}/10`);
 if (schema !== undefined && schema < 9) problems.push(`schema quality ${schema}/10`);
 console.error(`\nmcprobe: ${report.overall}/100 (${report.grade}) · error handling ${errorHandling ?? "?"}/10 · schema ${schema ?? "?"}/10`);
+console.error(
+  "by category: " +
+    report.dimensions.map((d) => `${d.key} ${d.score}/10${d.weight !== undefined ? ` (weight ${d.weight})` : ""}${d.notes ? ` [${d.notes}]` : ""}`).join(" · "),
+);
 if (problems.length) {
   console.error(`mcp-audit: FAILED (${problems.join("; ")})`);
   process.exit(1);
