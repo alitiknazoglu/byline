@@ -22,7 +22,7 @@ import {
   type ClearStep,
 } from "./clearing";
 import { ago, clearSnapshotCache, loadSnapshot, type Room } from "./data";
-import { DEMO_TX, IS_MAINNET, NETWORK, OTHER_NETWORK, OTHER_SITE, REGISTRY as REGISTRY_ID, registryMissing } from "./network";
+import { DEMO_TX, IS_MAINNET, NETWORK, OTHER_NETWORK, OTHER_SITE, REGISTRY as REGISTRY_ID, registryMissing, registryUp } from "./network";
 import { TermContext } from "./term-context";
 import { Err, Line } from "./ui";
 import { useWallet } from "./wallet";
@@ -36,6 +36,13 @@ interface Entry {
   /** Printed at startup: shown in grey so the live prompt below reads as the place to type. */
   boot?: boolean;
 }
+
+type Health = "checking" | "up" | "down";
+const HEALTH_LABEL: Record<Health, string> = {
+  checking: `checking ${REGISTRY_ID}…`,
+  up: `operational: ${REGISTRY_ID} is answering`,
+  down: `down: can't reach ${REGISTRY_ID} right now`,
+};
 
 interface RunOpts {
   record?: boolean;
@@ -162,6 +169,18 @@ export function Terminal() {
   const walletRef = useRef(wallet);
   walletRef.current = wallet;
   const booted = useRef(false);
+  const [health, setHealth] = useState<Health>("checking");
+  // The status dot: green while the registry answers over RPC, red when it doesn't. Checked every minute.
+  useEffect(() => {
+    let alive = true;
+    const check = () => void registryUp().then((up) => alive && setHealth(up ? "up" : "down"));
+    check();
+    const timer = window.setInterval(check, 60_000);
+    return () => {
+      alive = false;
+      window.clearInterval(timer);
+    };
+  }, []);
   /** Follow new output to the bottom only once the visitor runs something; the opening screen stays at the top. */
   const follow = useRef(false);
   const [clearing, setClearing] = useState<{ steps: ClearStep[]; command: string } | null>(null);
@@ -515,7 +534,15 @@ export function Terminal() {
         </main>
 
         <footer className="status">
-          <span className="seg">{room === "sample" ? "sample" : `NEAR ${room}`}</span>
+          <span className="seg">
+            <span
+              className={`dot ${health}`}
+              role="img"
+              aria-label={HEALTH_LABEL[health]}
+              title={HEALTH_LABEL[health]}
+            />
+            {room === "sample" ? "sample" : `NEAR ${room}`}
+          </span>
           <a className="seg seg-link" href={OTHER_SITE} title={`Open Byline on ${OTHER_NETWORK}`}>
             {OTHER_NETWORK} ↗
           </a>
@@ -536,7 +563,7 @@ export function Terminal() {
             indexed {indexedAt ? ago(indexedAt) : "…"}
           </span>
           <span className="seg hide-sm">quotes are dry · nothing is sent</span>
-          <span className="seg right">{busy ? "working" : "ready"} · help</span>
+          <span className="seg right">© 2026 BYLINE</span>
         </footer>
       </div>
     </TermContext.Provider>

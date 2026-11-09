@@ -157,6 +157,9 @@ b { font-weight: 700; color: var(--hi); }
 .seg { padding: 5px 12px; border-right: 1px solid var(--rule); }
 .seg-link { color: var(--dim); text-decoration: none; }
 .seg-link:hover { color: var(--fg); }
+.dot { display: inline-block; width: 7px; height: 7px; margin-right: 7px; border-radius: 50%; vertical-align: 1px; background: var(--faint); }
+.dot.up { background: #3fb950; box-shadow: 0 0 0 2px rgba(63, 185, 80, 0.18); }
+.dot.down { background: #ff5f57; box-shadow: 0 0 0 2px rgba(255, 95, 87, 0.18); }
 .seg.right { margin-left: auto; border-right: 0; border-left: 1px solid var(--rule); }
 
 .tail { height: 33dvh; }
