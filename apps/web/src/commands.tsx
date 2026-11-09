@@ -195,8 +195,7 @@ const agent = await createAgentByline({ network: "${NETWORK}", title: "My DCA bo
 agent.code       // e.g. "${DEMO_CODE}": attach it to every swap and payment
 agent.accountId  // "<code>.${REGISTRY}", funded by the registry, controlled by this key`}</Code>
       <Line tone="dim">from the repo</Line>
-      <Code>{`npm run relayer                        # local relayer (until the hosted one is live)
-BYLINE_RELAYER_URL=http://localhost:8787/register npm run agent -- --create --pay`}</Code>
+      <Code>{`npm run agent -- --create --pay        # uses the hosted relayer`}</Code>
       <Line tone="dim">
         from an MCP client: call <span className="t-code">byline_create</span> · setup in <Cmd>mcp</Cmd>
       </Line>
