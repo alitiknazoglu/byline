@@ -22,6 +22,16 @@ const LOCK_MS = 75_000;
 const INDEX_BUDGET_MS = 40_000;
 /** Don't store a snapshot this big: Vercel's response limit is 4.5 MB. */
 const MAX_BODY = 4_000_000;
+/** How long a complete snapshot is preferred over newer partial ones. */
+const KEEP_COMPLETE_MS = 6 * 3600_000;
+
+const cachedComplete = (json: string) => {
+  try {
+    return (JSON.parse(json) as { complete?: boolean }).complete !== false;
+  } catch {
+    return false;
+  }
+};
 /** Release the lock only if it's still ours (another instance may hold it after ours expired). */
 const RELEASE = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
 
@@ -47,7 +57,7 @@ function redis(): Redis | null {
 function networkOf(request: Request): NetworkId | null {
   const asked = new URL(request.url).searchParams.get("network");
   if (asked) return asked === "mainnet" || asked === "testnet" ? asked : null;
-  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "");
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "").toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
   return host === "by-line.xyz" || host === "www.by-line.xyz" ? "mainnet" : "testnet";
 }
 
@@ -76,9 +86,10 @@ const ageMs = (json: string) => {
 };
 
 export async function GET(request: Request) {
-  // Only ?network= is accepted: random query strings would bypass the CDN cache and reach Redis on every request.
-  const params = new URL(request.url).searchParams;
-  if ([...params.keys()].some((k) => k !== "network")) {
+  // Only these exact query strings: anything else (extra or repeated parameters) would give the CDN a new
+  // cache key on every request and reach Redis each time.
+  const search = new URL(request.url).search;
+  if (!["", "?network=mainnet", "?network=testnet"].includes(search)) {
     return new Response(JSON.stringify({ error: "the only parameter is network=testnet|mainnet" }), { status: 400, headers: { "content-type": "application/json" } });
   }
   const network = networkOf(request);
@@ -125,10 +136,17 @@ export async function GET(request: Request) {
       explorerJwt: process.env.EXPLORER_JWT || undefined,
       budgetMs: INDEX_BUDGET_MS,
     });
-    const body = JSON.stringify(snapshot);
-    if (body.length > MAX_BODY) {
-      console.error(`[snapshot] ${network} snapshot is ${body.length} bytes; not storing or serving it`);
-      return cached ? reply(cached, "stale-error") : unavailable("the leaderboard is too large to serve right now");
+    let body = JSON.stringify(snapshot);
+    // Too big (in bytes): keep the leaderboard and drop the per-byline detail rather than store nothing.
+    if (Buffer.byteLength(body) > MAX_BODY) {
+      console.error(`[snapshot] ${network} snapshot is ${Buffer.byteLength(body)} bytes; dropping details`);
+      body = JSON.stringify({ ...snapshot, details: {}, details_dropped: true });
+      if (Buffer.byteLength(body) > MAX_BODY) return cached ? reply(cached, "stale-error") : unavailable("the leaderboard is too large to serve right now");
+    }
+    // A partial run (time budget or caps hit) never replaces a complete copy that is still recent.
+    if (!snapshot.complete && cached && cachedComplete(cached) && ageMs(cached) < KEEP_COMPLETE_MS) {
+      console.error(`[snapshot] ${network} run was partial; keeping the complete copy`);
+      return reply(cached, "stale");
     }
     if (r) await r(["SET", key, body, "EX", KEEP_S]).catch((e) => console.error(`[snapshot] redis SET failed: ${(e as Error).message}`));
     return reply(body, "fresh");

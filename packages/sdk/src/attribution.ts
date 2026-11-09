@@ -17,16 +17,27 @@ export interface PayoutChecker {
  * (or claimable by whoever registers that name later). The SDK refuses to route fees there.
  */
 export function mainnetPayoutChecker(near: Near = new Near(nearConfig("mainnet"))): PayoutChecker {
-  const cache = new Map<string, boolean>();
+  // Only definite answers are cached: an account that exists stays cached; a confirmed-missing one for
+  // 10 minutes (it may be created); an RPC failure isn't cached at all, so one hiccup can't drop a
+  // builder's fees for the rest of the process.
+  const cache = new Map<string, { ok: boolean; until: number }>();
+  const MISSING_TTL_MS = 10 * 60_000;
   return {
     async canReceive(accountId) {
       if (IMPLICIT.test(accountId)) return true;
       if (accountId.endsWith(".testnet")) return false;
       const hit = cache.get(accountId);
-      if (hit !== undefined) return hit;
-      const ok = await near.accountExists(accountId);
-      cache.set(accountId, ok);
-      return ok;
+      if (hit && hit.until > Date.now()) return hit.ok;
+      try {
+        await near.getAccount(accountId);
+        cache.set(accountId, { ok: true, until: Number.POSITIVE_INFINITY });
+        return true;
+      } catch (e) {
+        if (/does not exist|doesn't exist|UNKNOWN_ACCOUNT|AccountDoesNotExist/i.test(String((e as Error)?.message ?? e))) {
+          cache.set(accountId, { ok: false, until: Date.now() + MISSING_TTL_MS });
+        }
+        return false;
+      }
     },
   };
 }

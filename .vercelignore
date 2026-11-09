@@ -1,0 +1,14 @@
+# Never upload local secrets, keys or data if someone runs `vercel deploy` from the repo root.
+# (Production deploys build from GitHub, which already excludes these.)
+.env
+.env.*
+!.env.example
+data/
+*.sqlite
+*.sqlite-*
+*.db
+.near-credentials/
+.claude/
+.vercel/
+contract/target/
+node_modules/

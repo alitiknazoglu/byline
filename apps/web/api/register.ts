@@ -16,7 +16,7 @@ const relayers: Partial<Record<NetworkId, Relayer>> = {};
  * testnet.by-line.xyz → testnet; www.by-line.xyz / by-line.xyz → mainnet; anything else (previews) → testnet.
  */
 function defaultNetwork(request: Request): NetworkId {
-  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? new URL(request.url).host).toLowerCase().replace(/:\d+$/, "");
+  const host = (request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? new URL(request.url).host).toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
   if (host === "by-line.xyz" || host === "www.by-line.xyz") return "mainnet";
   return "testnet";
 }

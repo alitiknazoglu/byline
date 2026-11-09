@@ -57,6 +57,13 @@ export interface FastNearOptions {
   retries?: number;
 }
 
+/** Limits for one read: stop at `deadline` (epoch ms) or after `maxPages`; `report.truncated` is set if either cut it short. */
+export interface ReadLimits {
+  deadline?: number;
+  maxPages?: number;
+  report?: { truncated: boolean };
+}
+
 export class FastNear {
   private readonly fetchImpl: typeof fetch;
   private readonly urls: Record<NetworkId, string>;
@@ -72,10 +79,15 @@ export class FastNear {
    * All transactions touching `accountId`, newest first, down to `minBlockHeight` (exclusive).
    * Pages backwards with `max_block_height` and stops at the first page with nothing new.
    */
-  async accountTxs(network: NetworkId, accountId: string, minBlockHeight = 0): Promise<AccountTx[]> {
+  async accountTxs(network: NetworkId, accountId: string, minBlockHeight = 0, limits: ReadLimits = {}): Promise<AccountTx[]> {
     const seen = new Map<string, AccountTx>();
     let maxBlockHeight: number | undefined;
-    for (let page = 0; page < 100; page++) {
+    const maxPages = limits.maxPages ?? 100;
+    for (let page = 0; ; page++) {
+      if (page >= maxPages || (limits.deadline !== undefined && Date.now() >= limits.deadline)) {
+        if (page > 0 && limits.report) limits.report.truncated = true;
+        break;
+      }
       const body: Record<string, unknown> = { account_id: accountId };
       if (maxBlockHeight !== undefined) body.max_block_height = maxBlockHeight;
       const res = await this.post<{ account_txs: AccountTx[] }>(network, "/v0/account", body);
@@ -95,9 +107,13 @@ export class FastNear {
   }
 
   /** Full transactions with receipts. Batched 20 hashes per request. */
-  async transactions(network: NetworkId, hashes: string[]): Promise<FastTransaction[]> {
+  async transactions(network: NetworkId, hashes: string[], limits: ReadLimits = {}): Promise<FastTransaction[]> {
     const out: FastTransaction[] = [];
     for (let i = 0; i < hashes.length; i += 20) {
+      if (limits.deadline !== undefined && Date.now() >= limits.deadline) {
+        if (limits.report) limits.report.truncated = true;
+        break;
+      }
       const res = await this.post<{ transactions: (FastTransaction | null)[] }>(network, "/v0/transactions", {
         tx_hashes: hashes.slice(i, i + 20),
       });

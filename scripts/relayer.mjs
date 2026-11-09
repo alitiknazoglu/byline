@@ -25,7 +25,8 @@ const relayer = new Relayer({
   privateKey,
   registryId: registryFor(network, process.env.REGISTRY_CONTRACT_ID, (m) => console.warn(m)),
   rateStore: upUrl && upToken ? upstashRateStore(upUrl, upToken) : memoryRateStore(),
-  powBits: powEnv === undefined ? undefined : Number(powEnv),
+  // Empty or unset means the default (20); PoW can't be switched off by an empty variable.
+  powBits: powEnv === undefined || powEnv.trim() === "" ? undefined : Math.min(28, Math.max(16, Number(powEnv))),
 });
 const port = Number(process.env.RELAYER_PORT ?? 8787);
 

@@ -153,6 +153,11 @@ export function registerMessageProblem(msg: unknown, now = Date.now()): string |
   return null;
 }
 
+/** How often one solved proof-of-work body may be sent per hour (honest clients retry a few times). */
+const POW_REUSE_PER_HOUR = 8;
+/** Valid, solved requests one address may send per hour before the relayer stops reading the chain for it. */
+const ATTEMPTS_PER_IP_PER_HOUR = 30;
+
 const sha256Hex = async (s: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))), (b) => b.toString(16).padStart(2, "0")).join("");
 
@@ -175,7 +180,15 @@ export class Relayer {
     this.perIp = cfg.perIpPerHour ?? 5;
     this.globalPerHour = cfg.globalPerHour ?? 10;
     this.powBits = cfg.powBits ?? DEFAULT_POW_BITS;
-    this.rates = cfg.rateStore ?? memoryRateStore();
+    // Every counter and claim is namespaced by registry, so testnet and mainnet sharing one store
+    // (one Upstash database) can never use up each other's budgets or locks.
+    const inner = cfg.rateStore ?? memoryRateStore();
+    const ns = `${this.registry.contractId}:`;
+    this.rates = {
+      hit: (key, windowMs) => inner.hit(ns + key, windowMs),
+      claim: (key, ttlMs) => inner.claim(ns + key, ttlMs),
+      release: (key) => inner.release(ns + key),
+    };
   }
 
   async handle(input: unknown, ip = "unknown"): Promise<RelayResult> {
@@ -210,10 +223,23 @@ export class Relayer {
       };
     }
 
+    const busy = { status: 503, body: { error: "The relayer can't check its rate limit right now; try again shortly" } };
+    // Cheap limits before anything that costs an RPC call or the lock: one solved puzzle can't be replayed
+    // without end, and one address can't flood the relayer with valid bodies.
+    try {
+      if ((await this.rates.hit(`pow:${await sha256Hex(signed.signature)}`, 60 * 60_000)) > POW_REUSE_PER_HOUR) {
+        return { status: 429, body: { error: "This signed message has been sent too many times; sign a new one" } };
+      }
+      if ((await this.rates.hit(`try:${ip}`, 60 * 60_000)) > ATTEMPTS_PER_IP_PER_HOUR) {
+        return { status: 429, body: { error: "Too many requests from this address; try again within the hour" } };
+      }
+    } catch {
+      return busy;
+    }
+
     const existing = await this.registry.getBylineForKey(signed.public_key);
     if (existing) return { status: 200, body: { code: existing, account_id: this.registry.agentAccountId(existing), existing: true } };
 
-    const busy = { status: 503, body: { error: "The relayer can't check its rate limit right now; try again shortly" } };
     // One sponsored registration in flight at a time, across every instance. The registry keeps a small
     // solvency margin for the callback that finishes each registration; registrations that overlap would
     // share it. Waiting for FINAL before releasing keeps them one after another.
@@ -234,10 +260,6 @@ export class Relayer {
   private async submit(signed: SignedRegistration, ip: string): Promise<RelayResult> {
     const busy = { status: 503, body: { error: "The relayer can't check its rate limit right now; try again shortly" } };
     try {
-      const count = await this.rates.hit(`ip:${ip}`, 60 * 60_000);
-      if (count > this.perIp) return { status: 429, body: { error: `Too many registrations from this address; try again within the hour` } };
-      const total = await this.rates.hit("global", 60 * 60_000);
-      if (total > this.globalPerHour) return { status: 429, body: { error: "The relayer has onboarded as many agents as it will this hour; try again later" } };
       // Each signature is submitted at most once, and one key has one registration in flight at a time:
       // a replayed or duplicated body can't make the relayer pay gas twice.
       if (!(await this.rates.claim(`sig:${await sha256Hex(signed.signature)}`, MAX_TTL_MS))) {
@@ -251,6 +273,18 @@ export class Relayer {
     }
     const sponsor = await this.registry.getSponsorStatus();
     if (sponsor.used >= sponsor.limit) return { status: 429, body: { error: "Sponsored onboarding is full", sponsored: sponsor } };
+    // Only requests that will really be submitted count toward the per-address and hourly caps, so
+    // replays, duplicates and "full" answers can't use them up for honest agents.
+    try {
+      if ((await this.rates.hit(`ip:${ip}`, 60 * 60_000)) > this.perIp) {
+        return { status: 429, body: { error: `Too many registrations from this address; try again within the hour` } };
+      }
+      if ((await this.rates.hit("global", 60 * 60_000)) > this.globalPerHour) {
+        return { status: 429, body: { error: "The relayer has onboarded as many agents as it will this hour; try again later" } };
+      }
+    } catch {
+      return busy;
+    }
 
     let txHash = "";
     try {

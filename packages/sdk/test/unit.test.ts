@@ -24,7 +24,8 @@ import {
   type BylineEvent,
   type PayoutChecker,
 } from "../src/index.js";
-import { Relayer, registerMessageProblem, upstashRateStore } from "../src/relay.js";
+import { FastNear } from "../src/chain.js";
+import { memoryRateStore, Relayer, registerMessageProblem, upstashRateStore } from "../src/relay.js";
 
 // ---------- fakes ----------
 
@@ -47,6 +48,11 @@ function fakeNear(views: Record<string, (args: Record<string, unknown>, contract
       return true;
     }),
     accountExists: vi.fn(async (id: string) => existing.includes(id)),
+    getAccount: vi.fn(async (id: string) => {
+      if (id === "flaky.near") throw new Error("fetch failed");
+      if (!existing.includes(id)) throw new Error(`Account ${id} does not exist`);
+      return { amount: "1" };
+    }),
     transaction: (signer: string) => {
       const tx: SentTx = { signer, actions: [] };
       const builder = {
@@ -221,7 +227,17 @@ describe("mainnetPayoutChecker", () => {
     expect(await c.canReceive("alice.near")).toBe(true);
     expect(await c.canReceive("alice.near")).toBe(true);
     expect(await c.canReceive("ghost.near")).toBe(false);
-    expect(f.raw.accountExists).toHaveBeenCalledTimes(2);
+    expect(await c.canReceive("ghost.near")).toBe(false);
+    // alice cached after one read; ghost's "missing" cached for a while.
+    expect(f.raw.getAccount).toHaveBeenCalledTimes(2);
+  });
+
+  it("doesn't cache an RPC failure as 'missing'", async () => {
+    const f = fakeNear({}, []);
+    const c = mainnetPayoutChecker(f.near);
+    expect(await c.canReceive("flaky.near")).toBe(false);
+    expect(await c.canReceive("flaky.near")).toBe(false);
+    expect(f.raw.getAccount).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -375,6 +391,45 @@ describe("generateAgentKey", () => {
 
 // ---------- onboarding (gasless) ----------
 
+describe("FastNear read limits", () => {
+  // A fake history API: every page holds 200 fresh transactions, so only the limits can stop the reader.
+  const endless = () => {
+    let pages = 0;
+    let batches = 0;
+    const fetchImpl = vi.fn(async (url: string, init?: RequestInit) => {
+      if (url.endsWith("/v0/account")) {
+        const start = 1_000_000 - pages * 200;
+        pages++;
+        const account_txs = Array.from({ length: 200 }, (_, i) => ({ account_id: "a.testnet", transaction_hash: `h${start - i}`, tx_block_height: start - i, is_signer: false, is_real_signer: false }));
+        return new Response(JSON.stringify({ account_txs }));
+      }
+      batches++;
+      const { tx_hashes } = JSON.parse(String(init!.body)) as { tx_hashes: string[] };
+      return new Response(JSON.stringify({ transactions: tx_hashes.map(() => null) }));
+    });
+    return { fast: new FastNear({ fetch: fetchImpl as unknown as typeof fetch }), pages: () => pages, batches: () => batches };
+  };
+
+  it("stops at the page cap and says it was cut short", async () => {
+    const e = endless();
+    const report = { truncated: false };
+    const txs = await e.fast.accountTxs("testnet", "a.testnet", 0, { maxPages: 3, report });
+    expect(e.pages()).toBe(3);
+    expect(txs).toHaveLength(600);
+    expect(report.truncated).toBe(true);
+  });
+
+  it("reads nothing more once the deadline has passed", async () => {
+    const e = endless();
+    const report = { truncated: false };
+    await e.fast.accountTxs("testnet", "a.testnet", 0, { deadline: Date.now() - 1, report });
+    await e.fast.transactions("testnet", Array.from({ length: 100 }, (_, i) => `h${i}`), { deadline: Date.now() - 1, report });
+    expect(e.pages()).toBe(0);
+    expect(e.batches()).toBe(0);
+    expect(report.truncated).toBe(true);
+  });
+});
+
 describe("Registry.inviteAccount", () => {
   it("refuses to invite an account that doesn't exist yet, unless told to", async () => {
     const f = fakeNear({}, ["bot.testnet"]);
@@ -416,7 +471,7 @@ describe("gasless onboarding", () => {
     expect(await verifyRegistration(reg, "byline.testnet")).toBe(true);
   });
 
-  function fakeRegistry(state: { keys: Record<string, string>; used: number; limit: number; submitted: unknown[] }) {
+  function fakeRegistry(state: { keys: Record<string, string>; used: number; limit: number; submitted: unknown[] }, network: "testnet" | "mainnet" = "testnet") {
     const near = {
       view: vi.fn(async (_c: string, method: string, args: Record<string, unknown>) => {
         if (method === "get_byline_for_key") return state.keys[args.public_key as string] ?? null;
@@ -424,7 +479,7 @@ describe("gasless onboarding", () => {
         throw new Error(method);
       }),
     } as unknown as Near;
-    const registry = new Registry({ network: "testnet", near });
+    const registry = new Registry({ network, near });
     registry.registerSigned = vi.fn(async (reg) => {
       state.submitted.push(reg);
       state.keys[reg.public_key] = "k7m2x9qa";
@@ -625,7 +680,34 @@ describe("gasless onboarding", () => {
     expect((await mk().handle(signRegistration(generateKey(), "byline.testnet", {}), "7.7.7.7")).status).toBe(200);
     expect((await mk().handle(signRegistration(generateKey(), "byline.testnet", {}), "7.7.7.7")).status).toBe(429);
     // The counter gets its expiry in the same request as its first count.
-    expect(calls).toContainEqual({ path: "/pipeline", body: [["SET", "byline:rate:ip:7.7.7.7", "0", "PX", 3_600_000, "NX"], ["INCR", "byline:rate:ip:7.7.7.7"]] });
+    expect(calls).toContainEqual({ path: "/pipeline", body: [["SET", "byline:rate:byline.testnet:ip:7.7.7.7", "0", "PX", 3_600_000, "NX"], ["INCR", "byline:rate:byline.testnet:ip:7.7.7.7"]] });
+  });
+
+  it("relayer: testnet traffic never uses up mainnet's hourly cap (one shared store)", async () => {
+    const store = memoryRateStore();
+    const testnet = new Relayer({ network: "testnet", registry: fakeRegistry({ keys: {}, used: 0, limit: 100, submitted: [] }), powBits: 0, perIpPerHour: 100, globalPerHour: 2, rateStore: store });
+    const mainnet = new Relayer({ network: "mainnet", registry: fakeRegistry({ keys: {}, used: 0, limit: 100, submitted: [] }, "mainnet"), powBits: 0, perIpPerHour: 100, globalPerHour: 2, rateStore: store });
+    for (let i = 0; i < 3; i++) await testnet.handle(signRegistration(generateKey(), "byline.testnet", {}), `10.0.0.${i}`);
+    expect((await mainnet.handle(signRegistration(generateKey(), "byline.near", {}), "10.0.1.1")).status).toBe(200);
+  });
+
+  it("relayer: replays and refusals don't count toward the hourly cap", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const relayer = new Relayer({ network: "testnet", registry: fakeRegistry(state), powBits: 0, perIpPerHour: 100, globalPerHour: 2 });
+    const reg = signRegistration(generateKey(), "byline.testnet", {});
+    expect((await relayer.handle(reg, "1.1.1.1")).status).toBe(200);
+    // Same body again: answered "existing" (key already has a byline) without counting.
+    for (let i = 0; i < 6; i++) expect((await relayer.handle(reg, "1.1.1.1")).status).toBe(200);
+    expect((await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "2.2.2.2")).status).toBe(200);
+    expect(state.submitted).toHaveLength(2);
+  });
+
+  it("relayer: one solved body can't be replayed without end", async () => {
+    const relayer = new Relayer({ network: "testnet", registry: fakeRegistry({ keys: {}, used: 100, limit: 100, submitted: [] }), powBits: 0 });
+    const reg = signRegistration(generateKey(), "byline.testnet", {});
+    const statuses = [];
+    for (let i = 0; i < 10; i++) statuses.push((await relayer.handle(reg, `3.3.3.${i}`)).status);
+    expect(statuses.slice(-2)).toEqual([429, 429]);
   });
 
   it("relayer: fails closed when the rate store is down", async () => {

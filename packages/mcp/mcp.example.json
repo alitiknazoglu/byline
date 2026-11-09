@@ -2,7 +2,7 @@
   "mcpServers": {
     "byline": {
       "command": "npx",
-      "args": ["-y", "@by-line/mcp"],
+      "args": ["-y", "@by-line/mcp@0.2.0"],
       "env": {
         "BYLINE_NETWORK": "testnet",
         "BYLINE_RELAYER_URL": "http://localhost:8787/register"

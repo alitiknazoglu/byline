@@ -1,6 +1,6 @@
 {
   "name": "@by-line/sdk",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Give your AI agent a byline on NEAR: credit every swap, payment and transaction to the agent and its builder.",
   "license": "MIT",
   "author": "Ali Tıknazoğlu",

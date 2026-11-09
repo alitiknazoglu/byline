@@ -24,7 +24,7 @@ Then register it. For Claude Code, put this in `.mcp.json`; an example is in [mc
   "mcpServers": {
     "byline": {
       "command": "npx",
-      "args": ["-y", "@by-line/mcp"],
+      "args": ["-y", "@by-line/mcp@0.2.0"],
       "env": { "BYLINE_NETWORK": "testnet" }
     }
   }
@@ -62,13 +62,16 @@ The server tells the model the flow on connect, so nobody has to remember tool n
 | `BYLINE_STATE_DIR` | `~/.byline` | Remembers which byline this server acts as |
 | `BYLINE_RECORD` | unset | JSONL log the indexer counts (`data/byline-events.jsonl`) |
 | `BYLINE_ALLOW_LIVE` | unset | Must be `1` for mainnet swaps, payments, registrations and links |
-| `BYLINE_MAX_SWAP` | `10` | Largest live swap, in units of the `from` token |
-| `BYLINE_MAX_PAY_RAW` | unset | Largest payment, in the token's smallest unit. Set it when `BYLINE_ALLOW_LIVE=1` |
+| `BYLINE_MAX_SWAP_USD` | `10` | Largest live swap in US dollars, checked on the live quote right before the deposit |
+| `BYLINE_MAX_SPEND_USD` | `50` | Total live swaps this server process may make, in US dollars |
+| `BYLINE_ALLOW_EXTERNAL_RECIPIENT` | unset | `1` lets a live swap send its output to an account other than the agent's own |
+| `BYLINE_MAX_PAY` | unset | Largest payment in the token's own units (e.g. `5` means 5 USDC or 5 wNEAR). On mainnet this or `BYLINE_MAX_PAY_RAW` is required |
+| `BYLINE_MAX_PAY_RAW` | unset | Largest payment in the token's smallest unit |
 
 ## Safety
 
 - **Nothing moves by default.** Quotes are dry, and swaps need `confirm: true`, mainnet and `BYLINE_ALLOW_LIVE=1`.
-- **Spending is limited to the agent's own account.** `byline_pay` and `byline_swap` sign only as `<code>.<registry>`, never as the byline's owner, even when the owner's wallet key sits in the same keys directory. Live swaps are capped by `BYLINE_MAX_SWAP`, and payments by `BYLINE_MAX_PAY_RAW` when set.
+- **Spending is limited to the agent's own account.** `byline_pay` and `byline_swap` sign only as `<code>.<registry>`, never as the byline's owner, even when the owner's wallet key sits in the same keys directory. Live swaps are capped in dollars per swap (`BYLINE_MAX_SWAP_USD`) and per process (`BYLINE_MAX_SPEND_USD`), go to the agent's own account unless `BYLINE_ALLOW_EXTERNAL_RECIPIENT=1`, and are exact-input only. Mainnet payments need `confirm: true` and an operator-set cap (`BYLINE_MAX_PAY` or `BYLINE_MAX_PAY_RAW`). `byline_verify` credits a swap only once 1Click reports it settled (SUCCESS).
 - **Linking needs both keys here.** `byline_link` needs the owner's key even when an invite already exists, so nobody can invite one of your accounts to their byline and have a tool call accept it.
 - **Chain text is labelled.** Memos, referrals and titles come back in their own `untrusted_*` fields or with a note to treat them as data.
 - **Spending tools are annotated `destructiveHint: true`,** so clients can ask before calling them and auditors don't fuzz them.

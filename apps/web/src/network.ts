@@ -9,7 +9,7 @@ export type NetworkId = "testnet" | "mainnet";
 
 /** The network for a host name. Known Byline domains win; otherwise the fallback (VITE_NETWORK or testnet). */
 export function networkForHost(host: string, fallback?: string): NetworkId {
-  const h = host.toLowerCase().replace(/:\d+$/, "");
+  const h = host.toLowerCase().replace(/:\d+$/, "").replace(/\.$/, "");
   if (h === "testnet.by-line.xyz") return "testnet";
   if (h === "by-line.xyz" || h === "www.by-line.xyz") return "mainnet";
   return fallback?.trim().toLowerCase() === "mainnet" ? "mainnet" : "testnet";

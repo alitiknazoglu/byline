@@ -237,10 +237,15 @@ export class Byline {
    * Live: commits a quote, sends the origin token to the deposit address with memo `byline:<code>`,
    * and tells 1Click about the deposit. NEAR mainnet only, origin token on NEAR.
    */
-  async swap(input: SwapInput, { live = false }: { live?: boolean } = {}): Promise<SwapResult> {
+  async swap(input: SwapInput, { live = false, maxAmountInUsd }: { live?: boolean; maxAmountInUsd?: number } = {}): Promise<SwapResult> {
     if (!live) return { ...(await this.quote(input)), executed: false };
     if (this.network !== "mainnet") {
       throw new Error("Live swaps settle on NEAR mainnet; this Byline is on testnet. Use a dry quote instead.");
+    }
+    // Only exact-input swaps go live: the deposit is then exactly the requested amount, never whatever a
+    // quote for an exact output asks for.
+    if ((input.swapType ?? "EXACT_INPUT") !== "EXACT_INPUT") {
+      throw new Error("Live swaps must be EXACT_INPUT, so the deposit is exactly the amount you asked for");
     }
     const origin = await this.oneClick.token(input.from, "near");
     const tokenContract = origin.assetId.startsWith("nep141:") ? origin.assetId.slice("nep141:".length) : null;
@@ -251,6 +256,13 @@ export class Byline {
     const depositAddress = quoted.response.quote.depositAddress;
     if (!depositAddress) throw new Error("1Click returned no deposit address");
     assertQuoteMatches(quoted.request, quoted.response);
+    if (maxAmountInUsd !== undefined) {
+      const usd = Number(quoted.response.quote.amountInUsd);
+      if (!Number.isFinite(usd) || usd > maxAmountInUsd) {
+        const worth = Number.isFinite(usd) ? "$" + usd.toFixed(2) : "an unknown amount";
+        throw new Error("This swap is worth " + worth + ", over the $" + maxAmountInUsd + " cap; nothing was sent");
+      }
+    }
     const amount = quoted.response.quote.amountIn;
 
     const sender = await this.account();

@@ -17,9 +17,15 @@ export interface Snapshot {
   summary: ReturnType<typeof summary>;
   rows: LeaderboardRow[];
   details: Record<string, BylineDetail | null>;
+  /** False when a time budget or cap cut indexing short: the numbers are a lower bound. */
+  complete: boolean;
 }
 
-export function buildSnapshot(db: DatabaseSync, network: NetworkId, registry: string, label: string = network): Snapshot {
+/** Rows per list in each byline's detail; text written by strangers is shortened. */
+const DETAIL_ROWS = 25;
+const shorten = (v: unknown, n = 64) => (typeof v === "string" && v.length > n ? `${v.slice(0, n)}…` : v);
+
+export function buildSnapshot(db: DatabaseSync, network: NetworkId, registry: string, label: string = network, complete = true): Snapshot {
   const rows = leaderboard(db, network, "volume_usd", 1000);
   return {
     label,
@@ -30,7 +36,14 @@ export function buildSnapshot(db: DatabaseSync, network: NetworkId, registry: st
     summary: summary(db, network),
     rows,
     // The leaderboard is computed once; each detail reuses its row instead of recomputing all of them.
-    details: Object.fromEntries(rows.map((r) => [r.name, bylineDetail(db, network, r.name, 100, r)])),
+    details: Object.fromEntries(
+      rows.map((r) => {
+        const d = bylineDetail(db, network, r.name, DETAIL_ROWS, r);
+        if (d) d.memoTransfers = d.memoTransfers.map((m) => ({ ...m, memo: shorten(m.memo), receiver: shorten(m.receiver), sender: shorten(m.sender) }));
+        return [r.name, d];
+      }),
+    ),
+    complete,
   };
 }
 
@@ -60,7 +73,7 @@ export async function indexNetwork(opts: {
       deadline: opts.budgetMs ? Date.now() + opts.budgetMs : undefined,
     });
     await syncAll(db, ctx);
-    return buildSnapshot(db, opts.network, registry);
+    return buildSnapshot(db, opts.network, registry, opts.network, !ctx.truncated);
   } finally {
     db.close();
   }

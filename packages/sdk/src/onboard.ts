@@ -92,6 +92,9 @@ export interface CreatedByline {
   existing: boolean;
 }
 
+/** The most proof-of-work this client will solve for a relayer (about a minute of CPU at 28 bits). */
+export const MAX_POW_BITS = 28;
+
 export class RelayerError extends Error {
   constructor(
     readonly status: number,
@@ -130,6 +133,10 @@ export async function createByline(opts: CreateBylineOptions): Promise<CreatedBy
   let { res, body } = await post(bits);
   // The relayer may ask for a different difficulty: solve that once and retry.
   if (res.status === 428 && body?.pow_bits !== undefined && body.pow_bits !== bits) {
+    // A relayer can't make this client burn unbounded CPU: 28 bits is already minutes of work.
+    if (!Number.isInteger(body.pow_bits) || body.pow_bits < 0 || body.pow_bits > MAX_POW_BITS) {
+      throw new RelayerError(428, `The relayer asked for ${body.pow_bits} bits of proof-of-work; refusing more than ${MAX_POW_BITS}`);
+    }
     bits = body.pow_bits;
     ({ res, body } = await post(bits));
   }

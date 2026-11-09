@@ -19,9 +19,15 @@ export interface Config {
   allowLive: boolean;
   /** Optional JSONL log the indexer reads (same format as the SDK recorder). */
   recordPath?: string;
-  /** Largest live swap, in human units of the `from` token (BYLINE_MAX_SWAP, default 10). */
-  maxSwap: number;
-  /** Largest payment in the token's smallest unit (BYLINE_MAX_PAY_RAW). Unset: no cap beyond the account's balance. */
+  /** Largest live swap in US dollars, checked against 1Click's quote right before the deposit (BYLINE_MAX_SWAP_USD, default 10). */
+  maxSwapUsd: number;
+  /** Total live swaps this process may make, in US dollars (BYLINE_MAX_SPEND_USD, default 50). */
+  maxSpendUsd: number;
+  /** Live swaps may send their output to accounts other than the agent's own (BYLINE_ALLOW_EXTERNAL_RECIPIENT=1). */
+  allowExternalRecipient: boolean;
+  /** Largest payment in human units of the token, e.g. "5" (BYLINE_MAX_PAY). Decimals are read from the token. */
+  maxPay?: string;
+  /** Largest payment in the token's smallest unit (BYLINE_MAX_PAY_RAW). On mainnet one of the two caps is required. */
   maxPayRaw?: bigint;
 }
 
@@ -43,7 +49,16 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     stateDir: env.BYLINE_STATE_DIR || join(homedir(), ".byline"),
     allowLive: env.BYLINE_ALLOW_LIVE === "1",
     recordPath: env.BYLINE_RECORD || undefined,
-    maxSwap: positiveNumber("BYLINE_MAX_SWAP", env.BYLINE_MAX_SWAP, 10),
+    maxSwapUsd: positiveNumber("BYLINE_MAX_SWAP_USD", env.BYLINE_MAX_SWAP_USD, 10),
+    maxSpendUsd: positiveNumber("BYLINE_MAX_SPEND_USD", env.BYLINE_MAX_SPEND_USD, 50),
+    allowExternalRecipient: env.BYLINE_ALLOW_EXTERNAL_RECIPIENT === "1",
+    maxPay: env.BYLINE_MAX_PAY
+      ? /^\d{1,18}(\.\d{1,24})?$/.test(env.BYLINE_MAX_PAY)
+        ? env.BYLINE_MAX_PAY
+        : (() => {
+            throw new Error(`BYLINE_MAX_PAY must be a positive decimal like "5", got ${env.BYLINE_MAX_PAY}`);
+          })()
+      : undefined,
     maxPayRaw: env.BYLINE_MAX_PAY_RAW ? (/^[1-9]\d*$/.test(env.BYLINE_MAX_PAY_RAW) ? BigInt(env.BYLINE_MAX_PAY_RAW) : (() => {
       throw new Error(`BYLINE_MAX_PAY_RAW must be a positive integer, got ${env.BYLINE_MAX_PAY_RAW}`);
     })()) : undefined,
@@ -66,6 +81,8 @@ export class Context {
   private readonly records = new Map<string, { at: number; record: BylineRecord }>();
   private readonly bylines = new Map<string, { byline: Byline; accountId: string; canSign: boolean }>();
   private static readonly RECORD_TTL_MS = 60_000;
+  /** US dollars of live swaps this process has sent (against BYLINE_MAX_SPEND_USD). */
+  spentUsd = 0;
 
   constructor(readonly config: Config) {
     this.registry = new Registry({ network: config.network, contractId: config.registryId });

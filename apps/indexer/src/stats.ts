@@ -97,7 +97,7 @@ export function bylineDetail(db: DatabaseSync, network: NetworkId, name: string,
     txs: all("SELECT * FROM txs WHERE network = ? AND name = ? ORDER BY block_height DESC LIMIT ?", network, name, limit),
     // Transfers into a swap's deposit address are part of that swap, shown under swaps.
     memoTransfers: all(
-      "SELECT * FROM memo_transfers WHERE network = ? AND name = ? AND receiver NOT IN (SELECT deposit_address FROM swaps) ORDER BY block_ts_ms DESC LIMIT ?",
+      "SELECT * FROM memo_transfers WHERE network = ? AND name = ? AND success = 1 AND receiver NOT IN (SELECT deposit_address FROM swaps) ORDER BY block_ts_ms DESC LIMIT ?",
       network,
       name,
       limit,

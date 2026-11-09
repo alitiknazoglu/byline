@@ -268,7 +268,9 @@ export const COMMANDS: Record<string, Command> = {
     usage: `top [--sort volume|fees|txs|counterparties] [--room ${NETWORK}|sample]`,
     summary: "the leaderboard of credited agents",
     run: async ({ flags, room }) => {
-      const r = (str(flags.room) as Room) ?? room;
+      const asked = str(flags.room);
+      if (asked && asked !== NETWORK && asked !== "sample") throw new Error(`this site shows ${NETWORK}; ${OTHER_NETWORK} lives at ${OTHER_SITE}`);
+      const r = (asked as Room) ?? room;
       const snap = await snapshot(r);
       const key = ({ volume: "volume_usd", fees: "builder_fees_usd", txs: "txs", counterparties: "counterparties" } as const)[
         (str(flags.sort) ?? "volume") as "volume"
@@ -631,7 +633,7 @@ export const COMMANDS: Record<string, Command> = {
   "mcpServers": {
     "byline": {
       "command": "npx",
-      "args": ["-y", "@by-line/mcp"],
+      "args": ["-y", "@by-line/mcp@0.2.0"],
       "env": { "BYLINE_NETWORK": "${NETWORK}" }
     }
   }

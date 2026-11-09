@@ -115,6 +115,22 @@ const DEEP_LINK_SAFE = new Set(["show", "top", "quote", "verify", "help", "about
  * picker) and a bare `register` (the guide). `register --wallet` and anything that moves money only
  * goes into the prompt, for the visitor to read and run.
  */
+/**
+ * A command from a link, rebuilt from its parsed parts with --yes removed, so the reader always sees the
+ * preview first (a quoted "--yes" can't slip through a text replace).
+ */
+function prefillWithoutYes(line: string): string {
+  const { name, args, flags } = parse(line);
+  const q = (v: string) => (/\s/.test(v) ? `"${v.replace(/"/g, "")}"` : v);
+  const parts = [name, ...args.map(q)];
+  for (const [k, v] of Object.entries(flags)) {
+    if (k === "yes") continue;
+    parts.push(`--${k}`);
+    if (v !== true) parts.push(q(v));
+  }
+  return parts.join(" ");
+}
+
 function deepLinkSafe(line: string): boolean {
   const [name, ...rest] = line.split(" ");
   if (DEEP_LINK_SAFE.has(name!)) return true;
@@ -324,7 +340,7 @@ export function Terminal() {
       // A link may only show things. Anything that signs, pays, downloads a key or changes the wallet is
       // typed into the prompt for the reader to run (without --yes), never run on load.
       if (deepLinkSafe(deep)) run(deep, { record: false });
-      else setInput(deep.replace(/(^|\s)--yes(?=\s|$)/g, "").trim());
+      else setInput(prefillWithoutYes(deep));
       // The link has done its job: drop #mcp, #register… so the address stays clean and a reload doesn't re-run it.
       if (window.location.hash) window.history.replaceState(null, "", window.location.pathname + window.location.search);
     }

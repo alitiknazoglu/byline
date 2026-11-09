@@ -35,11 +35,25 @@ export interface SyncContext {
   sleep: (ms: number) => Promise<void>;
   /** Epoch ms after which the slow steps stop early (the snapshot API has a hard time limit). */
   deadline?: number;
+  /** Set when a time budget or a cap cut a step short: the snapshot built from this run is partial. */
+  truncated: boolean;
 }
+
+/** History pages (200 txs each) read per account per run, and for the registry's own history. */
+const ACCOUNT_PAGES = 10;
+/** Most recent transactions that merely touch an agent account (not signed by it) read per run: anyone can add those. */
+const INBOUND_PER_ACCOUNT = 200;
+/** Most recent registry transactions read per run for its event history (anyone can add 1-yocto transfers). */
+const REGISTRY_TXS = 500;
+/** Chain-swap candidates checked against 1Click per byline per run. */
+const SWAP_CANDIDATES_PER_BYLINE = 25;
+
+const limits = (ctx: SyncContext) => ({ deadline: ctx.deadline, maxPages: ACCOUNT_PAGES, report: ctx });
 
 /** True once the time budget is spent: loops stop and the snapshot is built from what's in. */
 function outOfTime(ctx: SyncContext, step: string): boolean {
   if (ctx.deadline === undefined || Date.now() < ctx.deadline) return false;
+  ctx.truncated = true;
   ctx.log(`${step}: out of time, stopping early`);
   return true;
 }
@@ -65,6 +79,7 @@ export function createContext(opts: {
     log: opts.log ?? (() => {}),
     sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
     deadline: opts.deadline,
+    truncated: false,
   };
 }
 
@@ -75,6 +90,7 @@ const now = () => new Date().toISOString();
 export async function syncRegistry(db: DatabaseSync, ctx: SyncContext): Promise<BylineRecord[]> {
   const all: BylineRecord[] = [];
   for (let from = 0; ; from += 50) {
+    if (outOfTime(ctx, "registry")) break;
     const page = await ctx.registry.getBylines(from, 50);
     all.push(...page);
     if (page.length < 50) break;
@@ -105,9 +121,11 @@ export async function syncRegistry(db: DatabaseSync, ctx: SyncContext): Promise<
 export async function syncRegistryEvents(db: DatabaseSync, ctx: SyncContext): Promise<number> {
   const key = `registry_events:${ctx.network}:${ctx.registry.contractId}`;
   const since = Number(getCursor(db, key) ?? 0);
-  const history = await ctx.fastnear.accountTxs(ctx.network, ctx.registry.contractId, since);
+  const history = await ctx.fastnear.accountTxs(ctx.network, ctx.registry.contractId, since, limits(ctx));
   if (!history.length) return 0;
-  const txs = await ctx.fastnear.transactions(ctx.network, history.map((h) => h.transaction_hash));
+  const recent = [...history].sort((a, b) => b.tx_block_height - a.tx_block_height).slice(0, REGISTRY_TXS);
+  if (recent.length < history.length) ctx.truncated = true;
+  const txs = await ctx.fastnear.transactions(ctx.network, recent.map((h) => h.transaction_hash), limits(ctx));
   let n = 0;
   tx(db, () => {
     const ins = db.prepare(`
@@ -137,13 +155,19 @@ export async function syncActivity(db: DatabaseSync, ctx: SyncContext): Promise<
     // v2: also reads memo payments others sent (the v1 cursor only looked at what the agent signed).
     const key = `activity2:${ctx.network}:${account_id}`;
     const since = Number(getCursor(db, key) ?? 0);
-    const history = await ctx.fastnear.accountTxs(ctx.network, account_id, since);
-    // What the agent signed counts as its action (txs + memo payments).
+    const history = await ctx.fastnear.accountTxs(ctx.network, account_id, since, limits(ctx));
+    // What the agent signed counts as its action (txs + memo payments): all of it is read.
     const signedHashes = new Set(history.filter((h) => h.is_real_signer || h.is_signer).map((h) => h.transaction_hash));
-    // Anything else that touches the account is read only for payments whose memo names a byline:
-    // someone paying the agent with `byline:<code>` is credited to that code, never counted as the agent's own tx.
-    const hashes = [...new Set(history.map((h) => h.transaction_hash))];
-    const txs = hashes.length ? await ctx.fastnear.transactions(ctx.network, hashes) : [];
+    // Anything else that touches the account is read only for payments whose memo names a byline, and only
+    // the most recent ones: anyone can send an agent account transactions, so they can't be allowed to
+    // make indexing unbounded.
+    const inbound = history
+      .filter((h) => !signedHashes.has(h.transaction_hash))
+      .sort((a, b) => b.tx_block_height - a.tx_block_height)
+      .slice(0, INBOUND_PER_ACCOUNT)
+      .map((h) => h.transaction_hash);
+    const hashes = [...new Set([...signedHashes, ...inbound])];
+    const txs = hashes.length ? await ctx.fastnear.transactions(ctx.network, hashes, limits(ctx)) : [];
     tx(db, () => {
       const signed = txs.filter((t) => signedHashes.has(t.transaction.hash));
       const others = txs.filter((t) => !signedHashes.has(t.transaction.hash));
@@ -291,7 +315,17 @@ export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promis
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'chain')`);
   const payoutOf = db.prepare("SELECT payout FROM bylines WHERE network = ? AND name = ?");
   let found = 0;
-  for (const c of candidates.filter((x) => DEPOSIT_ADDRESS.test(x.receiver))) {
+  // Newest first, and only a bounded number per byline per run: junk deposits can't starve real swaps.
+  const perByline = new Map<string, number>();
+  const bounded = candidates
+    .filter((x) => DEPOSIT_ADDRESS.test(x.receiver))
+    .sort((a, b) => b.block_ts_ms - a.block_ts_ms)
+    .filter((x) => {
+      const n = (perByline.get(x.name) ?? 0) + 1;
+      perByline.set(x.name, n);
+      return n <= SWAP_CANDIDATES_PER_BYLINE;
+    });
+  for (const c of bounded) {
     if (outOfTime(ctx, "chain swaps")) break;
     const checkedKey = `chainswap:${ctx.network}:${c.receiver}`;
     if (getCursor(db, checkedKey) === "not-1click") continue;
@@ -331,7 +365,7 @@ export async function syncChainSwaps(db: DatabaseSync, ctx: SyncContext): Promis
         builderBps, JSON.stringify(appFees), c.tx_hash, c.sender, (d.refundReason as string) ?? null, at, now(),
       ).changes,
     );
-    await ctx.sleep(1_000);
+    await ctx.sleep(250);
   }
   ctx.log(`chain swaps: ${found} new`);
   return found;

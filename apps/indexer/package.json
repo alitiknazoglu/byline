@@ -35,7 +35,7 @@
     "cli": "node --disable-warning=ExperimentalWarning dist/cli.js"
   },
   "dependencies": {
-    "@by-line/sdk": "0.2.0",
+    "@by-line/sdk": "0.3.0",
     "near-kit": "0.20.2"
   },
   "devDependencies": {
