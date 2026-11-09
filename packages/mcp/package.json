@@ -1,6 +1,6 @@
 {
   "name": "@by-line/mcp",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "MCP server for Byline: lets AI agents create their on-chain identity on NEAR, get credited quotes, pay with attribution, and verify their activity.",
   "license": "MIT",
   "author": "Ali Tıknazoğlu",

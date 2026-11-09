@@ -653,7 +653,7 @@ export const COMMANDS: Record<string, Command> = {
             ["byline_register_with_wallet", "register from a funded account"],
           ]}
         />
-        <Line tone="dim">Audited with mcprobe: 82/100 (B), every malformed input rejected cleanly.</Line>
+        <Line tone="dim">Audited with mcprobe: 90/100 (A), every malformed input rejected cleanly.</Line>
       </>
     ),
   },

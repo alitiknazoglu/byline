@@ -88,22 +88,22 @@ describe("byline MCP server", () => {
   }, 30_000);
 
   it("byline_verify credits the agent's memo payment and not a failed registry tx", async () => {
-    const yes = await call("byline_verify", { tx_hash: MEMO_TX });
+    const yes = await call("byline_verify", { target: MEMO_TX });
     expect(yes.structuredContent).toMatchObject({ code: CODE, credited: true, signer: AGENT });
     expect(yes.structuredContent!.reasons.join(" ")).toMatch(/memo credits nw5s2ea1/);
     // The memo text itself comes back only in its own field, marked untrusted.
     expect(yes.structuredContent!.untrusted_memos).toContain("byline:nw5s2ea1 dca-fee");
-    const no = await call("byline_verify", { tx_hash: FAILED_TX });
+    const no = await call("byline_verify", { target: FAILED_TX });
     expect(no.structuredContent).toMatchObject({ credited: false, signer: "byline.testnet" });
-    // An unknown deposit address is an answer ("not credited"), not an error; each input is checked on its own.
-    const both = await call("byline_verify", { tx_hash: MEMO_TX, deposit_address: "0".repeat(64) });
-    expect(both.isError).toBeFalsy();
-    expect(both.structuredContent).toMatchObject({ credited: false });
-    expect(both.structuredContent!.reasons.join(" ")).toMatch(/1Click has no swap with this deposit address/);
+    // A target that isn't a tx hash is read as a deposit address; an unknown one is an answer ("not credited"), not an error.
+    const swap = await call("byline_verify", { target: "0".repeat(64) });
+    expect(swap.isError).toBeFalsy();
+    expect(swap.structuredContent).toMatchObject({ credited: false });
+    expect(swap.structuredContent!.reasons.join(" ")).toMatch(/1Click has no swap with this deposit address/);
   }, 30_000);
 
   it("byline_activity lists what the agent's own account signed", async () => {
-    const r = await call("byline_activity", { limit: 5 });
+    const r = await call("byline_activity", { code: CODE, limit: 5 });
     expect(r.isError, r.content[0]?.text).toBeFalsy();
     expect(r.structuredContent!.accounts).toEqual([AGENT]);
     expect(r.structuredContent!.transactions.every((t: { signer: string }) => t.signer === AGENT)).toBe(true);
@@ -117,6 +117,9 @@ describe("byline MCP server", () => {
       ["byline_quote", { amount: "-5" }],
       ["byline_pay", { token: "wrap.testnet", receiver_id: "NOT VALID", amount_raw: "1" }],
       ["byline_verify", {}],
+      ["byline_verify", { tx_hash: MEMO_TX }],
+      ["byline_activity", { limit: 5 }],
+      ["byline_create", {}],
     ] as const) {
       const r = await call(name, args as Record<string, unknown>);
       expect(r.isError, `${name} ${JSON.stringify(args)}`).toBe(true);

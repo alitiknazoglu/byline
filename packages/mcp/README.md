@@ -41,15 +41,15 @@ The server tells the model the flow on connect, so nobody has to remember tool n
 
 | Tool | What it does | Moves funds? |
 | --- | --- | --- |
-| `byline_create` | Gasless identity: generates a key here, signs a register message, and the registry creates the code plus `<code>.<registry>` with 0.03 NEAR. Returns the existing byline if the server has one. | No, the registry pays |
+| `byline_create` | Gasless identity: give it a `title` (the agent's label); it generates a key here, signs a register message, and the registry creates the code plus `<code>.<registry>` with 0.03 NEAR. Returns the existing byline if the server has one. | No, the registry pays |
 | `byline_register_with_wallet` | Registers from a funded account whose key is here. The registry picks the code. | About 0.01 NEAR of storage (**destructive**) |
 | `byline_info` | Owner, payout, fee and accounts, plus the exact `referral`/`appFees` quotes will carry, with warnings | No |
 | `byline_quote` | Real 1Click quote, always dry, credited to the code | No |
 | `byline_swap` | Credited swap. Only previews unless `confirm: true`, on mainnet, with `BYLINE_ALLOW_LIVE=1` | Yes (**destructive**) |
 | `byline_pay` | NEP-141 payment from the agent's account with memo `byline:<code>[ note]` | Yes (**destructive**) |
 | `byline_link` | Credits an existing account to the byline (owner invites, account links; both keys local). Invites can't be withdrawn. | Storage only (**destructive**: signs transactions) |
-| `byline_activity` | Recent transactions the byline's accounts signed, and payments carrying its memo, read live from the chain | No |
-| `byline_verify` | Is this `tx_hash` or 1Click `deposit_address` credited to the code? Gives the reasons. | No |
+| `byline_activity` | Recent transactions the byline's accounts signed, and payments carrying its memo, read live from the chain. Needs `code`. | No |
+| `byline_verify` | Is this `target` credited to the code? A NEAR transaction hash or a 1Click deposit address (detected from its shape). Gives the reasons. | No |
 
 ## Configuration (env)
 
@@ -98,11 +98,13 @@ This runs [mcprobe](https://github.com/alitiknazoglu/mcprobe), pinned to a revie
 - It refuses to run if the server could see any key.
 - Every tool that signs, spends or creates an identity is annotated destructive, and mcprobe skips it.
 
-**Latest result: 82/100 (B).** The script passes when there are no critical issues, error handling is 10 and schema quality is at least 9. The overall score is reported but not gated, because its latency part depends on the network.
+**Latest result: 90–91/100 (A)** over three runs. The script passes when there are no critical issues, error handling is 10 and schema quality is at least 9. The overall score is reported but not gated, because its latency part depends on the network.
 
 | Dimension | Score | Why |
 | --- | --- | --- |
 | Metadata | 10 | Name, version and instructions are present |
-| Schema | 9.4 | Four tools have only optional inputs (they default to this server's agent) |
-| Error handling | 10 | 17/17 malformed inputs rejected cleanly; no silent accepts, hallucinated successes or crashes |
-| Liveness | ~3.5 | 4/4 valid calls succeed; the rest is a latency penalty, because mcprobe targets 200 ms and these tools read the chain and 1Click live (p50 about 1.5 s) |
+| Schema | 9.86 | Only `byline_info` has no required input: its `code` is optional on purpose, so an agent can ask "do I have a byline yet?" |
+| Error handling | 10 | Every malformed input rejected cleanly; no silent accepts, hallucinated successes or crashes |
+| Liveness | 6–6.5 | 4/4 valid calls succeed; the rest is mcprobe's latency penalty (target 200 ms). `byline_info` and `byline_verify` answer in about 0.3 s; the median is held up by 1Click's own quote API (about 1–1.4 s) |
+
+What made it faster: independent reads run in parallel, the server warms 1Click's token list and its own agent's attribution at start, dry quotes skip the record lookup, and a transaction signed by `<code>.<registry>` is credited without an extra registry read (only the registry can create that account). The audit uses the `NEAR_RPC_*` endpoints from `.env` when set, as the server would in production.

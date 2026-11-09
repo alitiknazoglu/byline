@@ -22,7 +22,19 @@ if (!process.env.BYLINE_AUDIT_CHILD) {
   const state = mkdtempSync(join(tmpdir(), "byline-audit-state-"));
   const keys = mkdtempSync(join(tmpdir(), "byline-audit-keys-"));
   writeFileSync(join(state, "agent-testnet.json"), JSON.stringify({ code: "nw5s2ea1", accountId: "nw5s2ea1.byline.testnet" }));
+  // Only the RPC endpoint URLs come from .env (no keys): the server runs as configured in production.
+  const rpc = {};
+  try {
+    const { readFileSync } = await import("node:fs");
+    for (const line of readFileSync(fileURLToPath(new URL("../.env", import.meta.url)), "utf8").split("\n")) {
+      const m = /^(NEAR_RPC_(?:TESTNET|MAINNET))=(\S+)$/.exec(line.trim());
+      if (m) rpc[m[1]] = m[2];
+    }
+  } catch {
+    /* no .env: the public RPC is used */
+  }
   const env = {
+    ...rpc,
     PATH: process.env.PATH ?? "",
     HOME: process.env.HOME ?? "",
     BYLINE_AUDIT_CHILD: "1",
@@ -38,6 +50,9 @@ const serverEnv = {
   BYLINE_NETWORK: "testnet",
   BYLINE_STATE_DIR: process.env.BYLINE_STATE_DIR,
   BYLINE_KEYS_DIR: process.env.BYLINE_KEYS_DIR,
+  // RPC endpoints only (no signing material): audit the server configured the way it runs in production.
+  ...(process.env.NEAR_RPC_TESTNET ? { NEAR_RPC_TESTNET: process.env.NEAR_RPC_TESTNET } : {}),
+  ...(process.env.NEAR_RPC_MAINNET ? { NEAR_RPC_MAINNET: process.env.NEAR_RPC_MAINNET } : {}),
 };
 
 // Refuse to audit if the server would see any key (the keys dir must be empty).

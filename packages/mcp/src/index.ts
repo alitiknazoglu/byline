@@ -18,8 +18,9 @@ Safety: quotes never move funds. byline_swap only previews unless confirm=true o
 async function main() {
   const config = loadConfig();
   const ctx = new Context(config);
-  const server = new McpServer({ name: "byline", version: "0.1.0" }, { capabilities: { tools: {} }, instructions: INSTRUCTIONS });
+  const server = new McpServer({ name: "byline", version: "0.2.0" }, { capabilities: { tools: {} }, instructions: INSTRUCTIONS });
   registerTools(server, ctx);
+  ctx.warmUp();
   await server.connect(new StdioServerTransport());
   console.error(`[byline-mcp] ready on stdio · ${config.network} · registry ${config.registryId}${config.allowLive ? " · LIVE allowed" : ""}`);
 }

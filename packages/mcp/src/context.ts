@@ -3,7 +3,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { dirname, join } from "node:path";
-import { Byline, mainnetPayoutChecker, OneClick, RELAYER_URLS, REGISTRY_IDS, Registry, type BylineRecord, type NetworkId, type Recorder } from "@by-line/sdk";
+import { Byline, mainnetPayoutChecker, OneClick, resolveAttribution, RELAYER_URLS, REGISTRY_IDS, Registry, type BylineRecord, type NetworkId, type Recorder } from "@by-line/sdk";
 import { jsonlRecorder, nearFromCredentials } from "@by-line/sdk/node";
 import { FastNear } from "@by-line/sdk/chain";
 
@@ -143,6 +143,50 @@ export class Context {
     const entry = { byline, accountId, canSign };
     this.bylines.set(code, entry);
     return entry;
+  }
+
+  private readonly quoters = new Map<string, Byline>();
+
+  /**
+   * A read-only Byline for dry quotes: no record lookup first (the quote needs only the attribution and
+   * 1Click's token list), so nothing waits on an extra registry read. Never signs.
+   */
+  quoter(code: string): Byline {
+    let b = this.quoters.get(code);
+    if (!b) {
+      b = new Byline({
+        code,
+        network: this.config.network,
+        registryId: this.config.registryId,
+        oneClick: this.oneClick,
+        payoutChecker: this.payoutChecker,
+        ...(this.recorder ? { recorder: this.recorder } : {}),
+      });
+      this.quoters.set(code, b);
+    }
+    return b;
+  }
+
+  /** What quotes for `code` will carry (referral, appFees, warnings), with the shared mainnet payout checker. */
+  attribution(code: string) {
+    return resolveAttribution(this.registry, code, this.payoutChecker);
+  }
+
+  /**
+   * Start the reads every session needs anyway, so the first call doesn't wait for them: 1Click's token
+   * list, and this server's own agent's record and attribution (what its quotes carry). Failures are
+   * ignored; the first real call just fetches what it needs itself.
+   */
+  warmUp(): void {
+    const quiet = () => {};
+    void this.oneClick.tokens().catch(quiet);
+    void this.agent()
+      .then((a) => {
+        if (!a) return;
+        void this.record(a.code).catch(quiet);
+        void this.quoter(a.code).attribution().catch(quiet);
+      })
+      .catch(quiet);
   }
 
   signerFor(accountId: string) {

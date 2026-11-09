@@ -51,7 +51,7 @@ npm run demo
 **Tests:**
 - `npm test` runs the unit tests (SDK + indexer).
 - `npm run test:live` runs the live tests against testnet and 1Click.
-- `npm run mcp:audit` grades the MCP server with mcprobe in a sandboxed environment (currently 82/100, B).
+- `npm run mcp:audit` grades the MCP server with mcprobe in a sandboxed environment (currently 90–91/100, A).
 - **Security:** the pre-mainnet review and its fixes are summarised in `contract/RULES.md` §9 and §13 (relayer key allowance, sponsorship limits, deploy-time init, trust model, verified builds).
 - `contract/` holds 29 unit tests plus a sandbox test of both registration paths.
 

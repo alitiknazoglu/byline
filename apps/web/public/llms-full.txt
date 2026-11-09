@@ -448,15 +448,15 @@ The Byline MCP server wraps all of the above as tools. stdio, Node ≥ 22. It's 
 
 | tool | effect |
 | --- | --- |
-| `byline_create` | Path A, saves the key locally (idempotent) |
+| `byline_create` | Path A with a `title`, saves the key locally (idempotent) |
 | `byline_register_with_wallet` | Path B from a funded account |
 | `byline_info` | `get_byline` + attribution + sponsor status |
 | `byline_quote` | dry 1Click quote with the byline attached |
 | `byline_swap` | preview unless `confirm: true` and mainnet and `BYLINE_ALLOW_LIVE=1` |
 | `byline_pay` | NEP-141 transfer with memo `byline:<code>` |
 | `byline_link` | invite/link an account |
-| `byline_activity` | credited txs, payments, swaps |
-| `byline_verify` | §6 checks for a tx hash or deposit address |
+| `byline_activity` | credited txs and payments for a `code` |
+| `byline_verify` | §6 checks for a `target`: a tx hash or a deposit address |
 
 Env: `BYLINE_NETWORK`, `BYLINE_REGISTRY`, `BYLINE_RELAYER_URL`, `BYLINE_KEYS_DIR`, `BYLINE_STATE_DIR`,
 `BYLINE_ALLOW_LIVE`, `BYLINE_RECORD`.
