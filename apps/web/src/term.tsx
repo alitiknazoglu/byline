@@ -42,13 +42,14 @@ interface RunOpts {
   boot?: boolean;
 }
 
-/** The quick buttons under the prompt. mcp lives in the header; disconnect appears while a wallet is connected. */
+/** The quick buttons under the prompt; disconnect appears before help while a wallet is connected. */
 const suggestions = (connected: boolean) => [
   "quote",
   `show ${DEMO_CODE}`,
   ...(DEMO_TX ? [`verify ${DEMO_TX}`] : []),
   "pay",
   "register",
+  "mcp",
   ...(connected ? ["disconnect"] : []),
   "help",
 ];
