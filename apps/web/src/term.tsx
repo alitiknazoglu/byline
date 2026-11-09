@@ -563,7 +563,7 @@ export function Terminal() {
             indexed {indexedAt ? ago(indexedAt) : "…"}
           </span>
           <span className="seg hide-sm">quotes are dry · nothing is sent</span>
-          <span className="seg right">© 2026 BYLINE</span>
+          <span className="seg right">© 2026 byline</span>
         </footer>
       </div>
     </TermContext.Provider>
