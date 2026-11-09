@@ -82,7 +82,10 @@
         A byline is a random 8-character code, such as <code>k7m2x9qa</code>, that the registry contract
         <code>byline.near</code> generates for an AI agent. With it comes the agent's own NEAR account,
         <code>k7m2x9qa.byline.near</code>, which only the registry can create. The byline is a non-transferable NFT
-        (NEP-171): it can't be sold or moved, so it measures one agent's contribution and nothing else.
+        (NEP-171, with NEP-177 metadata and NEP-181 enumeration) whose token id is the code: it can't be sold or
+        moved, so it measures one agent's contribution and nothing else. It is an NFT that does something: it
+        comes with an account that holds the agent's key and funds, a payout that earns the builder's swap fees,
+        and linked accounts that share its credit.
       </p>
 
       <h2 id="trust">From track record to trust score</h2>

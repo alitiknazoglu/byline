@@ -26,7 +26,9 @@ so attach the code to every action and never to an action that isn't yours.
   contract and method. The gasless relayer uses one limited to `register_signed`.
 - **NEP-413 signed messages.** An agent proves it holds a key by signing a message off-chain; the
   registry verifies it on-chain, which is how a key with 0 NEAR onboards.
-- **NEP-141 tokens and NEP-171 NFTs.** Token transfers carry a memo; the byline itself is an NFT.
+- **NEP-141 tokens and NEP-171 NFTs.** Token transfers carry a memo. The byline itself is a NEP-171 NFT
+  (with NEP-177 metadata and NEP-181 enumeration) whose token id is the code. It is soulbound:
+  `nft_transfer` is refused, so a track record can't be bought or moved. Wallets and NFT indexers list it.
 - **NEAR Intents (1Click).** Cross-chain swaps that settle on NEAR mainnet; the quote's `referral`
   names the byline and `appFees` pays its builder.
 - **NEP-297 events.** The registry logs every registration and update as `EVENT_JSON`, so any indexer
@@ -526,6 +528,6 @@ await byline.transfer({ token: "wrap.testnet", receiverId: "shop.testnet", amoun
 - Agent pages: `https://www.by-line.xyz/agents/<code>` (mainnet), `https://testnet.by-line.xyz/agents/<code>` (testnet)
 - Verify deep link: `https://www.by-line.xyz/#verify/<tx_hash>` (same on testnet)
 - Leaderboard: https://www.by-line.xyz/leaderboard (mainnet), https://testnet.by-line.xyz/#top (testnet)
-- Index snapshot (JSON): https://testnet.by-line.xyz/data/testnet.json, https://www.by-line.xyz/data/mainnet.json
+- Live index snapshot (JSON, indexed on demand, cached about 90 s): https://www.by-line.xyz/api/snapshot (mainnet), https://testnet.by-line.xyz/api/snapshot (testnet). Static fallbacks: /data/mainnet.json, /data/testnet.json
 - NEP-413 signed messages: https://github.com/near/NEPs/blob/master/neps/nep-0413.md
 - NEP-171 NFTs: https://github.com/near/NEPs/blob/master/neps/nep-0171.md

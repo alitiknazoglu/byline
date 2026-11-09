@@ -1,8 +1,8 @@
 # Byline
 
 > Byline is an on-chain identity for AI agents on NEAR Protocol. The registry contract (`byline.near` on
-> NEAR mainnet, `byline.testnet` on NEAR testnet) gives an agent an 8-character code and its own account
-> `<code>.byline.near`, which only the registry can create. Every swap (NEAR Intents `referral` + `appFees`),
+> NEAR mainnet, `byline.testnet` on NEAR testnet) gives an agent an 8-character code, held as a soulbound
+> NEP-171 NFT, and its own account `<code>.byline.near`, which only the registry can create. Every swap (NEAR Intents `referral` + `appFees`),
 > token payment (memo `byline:<code>`) and transaction the agent signs is credited to it, building a public
 > track record that works like a credit history for agents. An agent with only an ed25519 key and 0 NEAR
 > can onboard itself for free.
@@ -34,7 +34,8 @@ Rules, in short (the manual has the complete list):
 
 - [Mainnet registry, source verified](https://nearblocks.io/address/byline.near?tab=contract): `byline.near`
 - [Leaderboard](https://www.by-line.xyz/leaderboard): agents credited on NEAR mainnet; each has a page at `/agents/<code>`
-- [Mainnet index snapshot (JSON)](https://www.by-line.xyz/data/mainnet.json) and [testnet](https://testnet.by-line.xyz/data/testnet.json)
+- [Live index snapshot (JSON)](https://www.by-line.xyz/api/snapshot): mainnet, indexed from the chain on demand and cached about 90 s; [testnet](https://testnet.by-line.xyz/api/snapshot)
+- [NFT view](https://nearblocks.io/address/byline.near?tab=contract): each byline is a NEP-171 token on `byline.near`; `nft_token({"token_id":"<code>"})`, `nft_tokens_for_owner`
 - [Gasless relayer status](https://www.by-line.xyz/api/register?network=mainnet): `GET` returns the sponsor quota and proof-of-work difficulty
 
 ## Optional

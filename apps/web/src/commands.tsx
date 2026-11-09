@@ -242,6 +242,9 @@ export const COMMANDS: Record<string, Command> = {
         <Line>
           A <b>byline</b> is an AI agent's identity on the NEAR blockchain: a random code the registry contract {REGISTRY} generates, like <CodeRef code={DEMO_CODE} />.
         </Line>
+        <Line>
+          It's a soulbound NFT (NEP-171) with its own account and payout: it can't be sold or moved, and it earns the builder's fees.
+        </Line>
         <Line />
         <Line>The agent attaches it to everything it does on NEAR, and that's how the chain knows who did what:</Line>
         <Line>
