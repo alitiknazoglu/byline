@@ -14,7 +14,7 @@ set("[data-net]", (el) => (el.textContent = NETWORK));
 set("[data-net-label]", (el) => (el.textContent = `NEAR ${NETWORK}`));
 set("[data-other-site]", (el) => {
   el.textContent = `${OTHER_NETWORK} ↗`;
-  el.setAttribute("href", `${OTHER_SITE}/docs`);
+  el.setAttribute("href", OTHER_SITE);
 });
 set("[data-registry]", (el) => {
   el.textContent = `registry ${REGISTRY}${IS_MAINNET ? " ✓ verified" : ""}`;
