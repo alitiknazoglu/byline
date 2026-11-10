@@ -556,16 +556,34 @@ export const COMMANDS: Record<string, Command> = {
     usage: IS_MAINNET ? "pay [--code CODE] [--to account.near] [--amount 0.01] [--yes]" : "pay [--code CODE] [--to account.testnet] [--amount 0.01]",
     summary: `send a real ${NETWORK} payment credited to a byline (wraps NEAR, memo byline:<code>), then verify it`,
     run: async ({ flags, wallet, status, then }) => {
-      const code = str(flags.code) ?? DEMO_CODE;
+      // Default to the connected wallet's own newest byline that can receive a payment (it has an account
+      // of its own or a linked one: payments are read from those accounts), else the demo byline.
+      const mine = wallet.accountId ? await readRegistry.getBylinesForOwner(wallet.accountId).catch(() => []) : [];
+      const newestFirst = [...mine].sort((a, b) => b.created_at_ms - a.created_at_ms);
+      const payable = (b: (typeof mine)[number]) => [b.account, ...b.linked].some((a) => a && a !== wallet.accountId);
+      const picked = flags.code ? null : (newestFirst.find(payable) ?? null);
+      const code = (str(flags.code) ?? picked?.code ?? DEMO_CODE).toLowerCase();
       if (!isValidCode(code)) throw new Error(`"${code}" isn't a byline code (8 characters, like ${DEMO_CODE})`);
       const amount = str(flags.amount) ?? "0.01";
       const max = IS_MAINNET ? 0.1 : 1;
       if (!/^\d+(\.\d{1,6})?$/.test(amount) || Number(amount) <= 0 || Number(amount) > max) throw new Error(`--amount takes 0.000001 to ${max} (${NETWORK} NEAR)`);
       const record = await readRegistry.getByline(code);
       if (!record) throw new Error(`no byline ${code} on ${REGISTRY}`);
-      const to = str(flags.to) ?? record.account ?? record.owner;
+      const to = str(flags.to) ?? [record.account, ...record.linked].find((a) => a && a !== wallet.accountId) ?? record.owner;
       // Checked, so the preview and the command it offers can't disagree about who gets paid.
       if (!isValidAccountId(to)) throw new Error(`--to must be a NEAR account id, got "${to}"`);
+      if (to === wallet.accountId) {
+        const ready = newestFirst.filter(payable).map((b) => b.code);
+        throw new Error(
+          `${code} has no account of its own yet, so this would pay your own wallet. ` +
+            (ready.length ? `Pay one that has: pay --code ${ready[0]}` : `Give it one with account ${code} --create, or pay someone else: pay --code ${code} --to <account>`),
+        );
+      }
+      const why = picked
+        ? `your newest byline with its own account${newestFirst[0]!.code !== picked.code ? ` (newer ones, like ${newestFirst[0]!.code}, don't have one yet)` : ""}`
+        : flags.code
+          ? null
+          : `the demo byline${wallet.accountId ? " (none of yours has its own account yet)" : ""}`;
       const memo = `byline:${code} demo`;
 
       if (!wallet.accountId || !wallet.near) {
@@ -590,7 +608,7 @@ export const COMMANDS: Record<string, Command> = {
       const sender = wallet.accountId;
       // Real money: show exactly what will happen and wait for an explicit --yes.
       if (IS_MAINNET && !flags.yes) {
-        const again = ["pay", ...(flags.code ? ["--code", code] : []), ...(flags.to ? ["--to", to] : []), ...(flags.amount ? ["--amount", amount] : []), "--yes"].join(" ");
+        const again = ["pay", ...(flags.code || picked ? ["--code", code] : []), ...(flags.to ? ["--to", to] : []), ...(flags.amount ? ["--amount", amount] : []), "--yes"].join(" ");
         return (
           <>
             <Warn>this sends real NEAR on mainnet</Warn>
@@ -600,6 +618,7 @@ export const COMMANDS: Record<string, Command> = {
                 ["to", to],
                 ["amount", `${amount} NEAR, wrapped to wNEAR`],
                 ["memo", <span className="t-code">{memo}</span>],
+                ["credits", why ? <><span className="t-code">{code}</span>, {why} · another: pay --code CODE</> : <span className="t-code">{code}</span>],
                 ["plus", "wNEAR storage for new holders (0.00125 NEAR each) and gas"],
               ]}
             />
