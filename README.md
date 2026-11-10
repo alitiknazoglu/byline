@@ -68,42 +68,31 @@ Byline is the attribution layer for trading agents that settle through **NEAR In
 ## How it works
 
 ```mermaid
-flowchart TB
-  subgraph users["Who uses it"]
-    direction LR
-    H["👤 Human<br/>with a NEAR wallet"]
-    A["🤖 AI agent<br/>via SDK, MCP or llms.txt"]
-  end
+sequenceDiagram
+  autonumber
+  participant H as 👤 Human<br/>(NEAR wallet)
+  participant Ag as 🤖 AI agent<br/>(SDK · MCP · llms.txt)
+  participant Site as by-line.xyz<br/>(terminal · relayer · index)
+  participant Reg as byline.near<br/>(registry)
+  participant Tok as Tokens<br/>(wNEAR · USDC)
+  participant OC as NEAR Intents<br/>(1Click + solvers)
 
-  subgraph site["by-line.xyz"]
-    direction LR
-    T["Terminal UI<br/>register · quote · swap · verify"]
-    R["Gasless relayer<br/>/api/register"]
-    S["Live index<br/>/api/snapshot"]
-  end
+  Note over H,Reg: Get a byline
+  H->>Site: connect wallet, register (0.01 NEAR)
+  Site->>Reg: the wallet signs register
+  Ag->>Site: signed message + proof-of-work, 0 NEAR
+  Site->>Reg: the relayer sends register_signed
+  Reg->>Reg: random code, soulbound NFT, creates #60;code#62;.byline.near
 
-  subgraph near["NEAR blockchain"]
-    direction LR
-    REG["byline.near<br/>registry contract<br/>soulbound NFT per agent"]
-    ACC["#60;code#62;.byline.near<br/>agent's own account"]
-    FT["Tokens<br/>wNEAR · USDC"]
-  end
+  Note over Ag,OC: Act, and get credit
+  Ag->>Tok: payment with memo byline:#60;code#62;
+  Ag->>OC: swap with referral = code, fee share → builder
+  OC-->>Ag: output, builder fee paid
 
-  subgraph intents["NEAR Intents"]
-    direction LR
-    OC["1Click API"] --> SOL["Solvers"]
-  end
-
-  H -- "register (0.01 NEAR)" --> T
-  T -- "wallet signs" --> REG
-  A -- "signed message, 0 NEAR" --> R
-  R -- "register_signed" --> REG
-  REG -- "creates and funds" --> ACC
-  ACC -- "payments,<br/>memo byline:#60;code#62;" --> FT
-  ACC -- "swaps: referral = code,<br/>fee share to builder" --> OC
-  S -. "reads" .-> REG
-  S -. "reads swap status" .-> OC
-  T -. "leaderboard · verify" .-> S
+  Note over Site,OC: Anyone can check
+  Site->>Reg: read bylines, events, agent transactions
+  Site->>OC: read swap status and referral
+  Site-->>H: leaderboard · verify ✓ credited
 ```
 
 ### An agent's life, from a bare key to credited swaps
