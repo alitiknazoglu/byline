@@ -551,6 +551,61 @@ describe("gasless onboarding", () => {
     expect(Object.keys(state.submitted[0] as object).sort()).toEqual(["message", "nonce", "public_key", "signature"]);
   });
 
+  it("relayer: an RPC error after the transaction landed still answers with the code, and sends once", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    const fallback = fakeRegistry(state);
+    const send = registry.registerSigned;
+    registry.registerSigned = vi.fn(async (reg) => {
+      await send(reg); // it lands...
+      throw new Error("HTTP 500: "); // ...but the RPC fails while waiting for FINAL
+    });
+    const relayer = new Relayer({ network: "testnet", registry, fallbackRegistry: fallback, powBits: 0, confirmWaitMs: 0 });
+    const r = await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "1.1.1.1");
+    expect(r).toMatchObject({ status: 200, body: { code: "k7m2x9qa", existing: false } });
+    expect(state.submitted).toHaveLength(1);
+    expect(fallback.registerSigned).not.toHaveBeenCalled();
+  });
+
+  it("relayer: sends through the fallback RPC when the first one fails before anything lands", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    registry.registerSigned = vi.fn(async () => {
+      throw new Error("HTTP 500: ");
+    });
+    const relayer = new Relayer({ network: "testnet", registry, fallbackRegistry: fakeRegistry(state), powBits: 0, confirmWaitMs: 0 });
+    const r = await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "1.1.1.1");
+    expect(r).toMatchObject({ status: 200, body: { code: "k7m2x9qa", tx_hash: "txhash" } });
+    expect(state.submitted).toHaveLength(1);
+  });
+
+  it("relayer: says the RPC failed, not that the registry refused, when no route gets it through", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const down = () => {
+      const r = fakeRegistry(state);
+      r.registerSigned = vi.fn(async () => {
+        throw new Error("HTTP 500: ");
+      });
+      return r;
+    };
+    const relayer = new Relayer({ network: "testnet", registry: down(), fallbackRegistry: down(), powBits: 0, confirmWaitMs: 0 });
+    const r = await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "1.1.1.1");
+    expect(r.status).toBe(502);
+    expect(r.body.error).toMatch(/RPC failed/);
+    expect(state.used).toBe(0);
+  });
+
+  it("relayer: a failing read is a clear 503, not a crash", async () => {
+    const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
+    const registry = fakeRegistry(state);
+    (registry.near as unknown as { view: () => Promise<never> }).view = async () => {
+      throw new Error("HTTP 500: ");
+    };
+    const relayer = new Relayer({ network: "testnet", registry, powBits: 0, confirmWaitMs: 0 });
+    const r = await relayer.handle(signRegistration(generateKey(), "byline.testnet", {}), "1.1.1.1");
+    expect(r).toMatchObject({ status: 503, body: { retry_after_s: 10 } });
+  });
+
   it("relayer: onboards one agent at a time and caps registrations per hour overall", async () => {
     const state = { keys: {} as Record<string, string>, used: 0, limit: 100, submitted: [] as unknown[] };
     const registry = fakeRegistry(state);

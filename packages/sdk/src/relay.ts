@@ -5,7 +5,7 @@
  * Its key is a function-call access key on the registry account, limited to `register_signed`:
  * the worst a leaked key can do is spend the sponsor quota.
  */
-import { Near } from "near-kit";
+import { FunctionCallError, Near } from "near-kit";
 import { verifyRegistration, type SignedRegistration } from "./onboard.js";
 import { checkPow, DEFAULT_POW_BITS } from "./pow.js";
 import { Registry } from "./registry.js";
@@ -32,6 +32,13 @@ export interface RelayerConfig {
    * use `upstashRateStore()` (or your own) in production.
    */
   rateStore?: RateStore;
+  /**
+   * A second registry client on another RPC, used when the first one fails: to send the registration again
+   * and to read whether it landed. Built automatically (on the public RPC) when a private RPC is configured.
+   */
+  fallbackRegistry?: Registry;
+  /** How long to look for the new byline on-chain after the RPC errored mid-send. Default 20 s. */
+  confirmWaitMs?: number;
 }
 
 /**
@@ -120,8 +127,11 @@ export interface RelayResult {
 }
 
 const MAX_TTL_MS = 60 * 60_000;
-/** How long the one-at-a-time lock outlives a relayer instance that died while holding it. */
-const INFLIGHT_TTL_MS = 90_000;
+/**
+ * How long the one-at-a-time lock outlives a relayer instance that died while holding it. Longer than
+ * the hosted function's maxDuration (120 s): a send, a wait for the chain, and the same on the fallback RPC.
+ */
+const INFLIGHT_TTL_MS = 150_000;
 
 // The registry contract's own rules for a signed register message (contract/src/lib.rs, RegisterMessage).
 // The relayer checks them before paying gas: a message the contract would reject costs the relayer's
@@ -161,8 +171,17 @@ const ATTEMPTS_PER_IP_PER_HOUR = 30;
 const sha256Hex = async (s: string) =>
   Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(s))), (b) => b.toString(16).padStart(2, "0")).join("");
 
+const RPC_DOWN: RelayResult = { status: 503, body: { error: "The NEAR RPC isn't answering right now; try again shortly", retry_after_s: 10 } };
+
+const errorText = (e: unknown) => (e instanceof Error ? e.message : String(e)) || (e as { name?: string })?.name || "unknown error";
+
+/** The contract itself said no (a panic), as opposed to the RPC failing to send or to report back. */
+const refusedOnChain = (e: unknown) => e instanceof FunctionCallError || /Smart contract panicked|FunctionCallError/i.test(errorText(e));
+
 export class Relayer {
   readonly registry: Registry;
+  private readonly fallback: Registry | null;
+  private readonly confirmWaitMs: number;
   readonly powBits: number;
   private readonly perIp: number;
   private readonly globalPerHour: number;
@@ -177,6 +196,14 @@ export class Relayer {
       const near = new Near({ ...nearConfig(cfg.network), privateKey: cfg.privateKey as `ed25519:${string}`, defaultSignerId: registryId });
       this.registry = new Registry({ network: cfg.network, contractId: registryId, near, signerId: registryId });
     }
+    // With a private RPC configured, keep the public one as a second route: one provider's bad minute
+    // shouldn't turn into a failed onboarding.
+    const publicNear =
+      !cfg.registry && cfg.privateKey && nearConfig(cfg.network).rpcUrl
+        ? new Near({ network: cfg.network, privateKey: cfg.privateKey as `ed25519:${string}`, defaultSignerId: registryId })
+        : null;
+    this.fallback = cfg.fallbackRegistry ?? (publicNear ? new Registry({ network: cfg.network, contractId: registryId, near: publicNear, signerId: registryId }) : null);
+    this.confirmWaitMs = cfg.confirmWaitMs ?? 20_000;
     this.perIp = cfg.perIpPerHour ?? 5;
     this.globalPerHour = cfg.globalPerHour ?? 10;
     this.powBits = cfg.powBits ?? DEFAULT_POW_BITS;
@@ -237,7 +264,12 @@ export class Relayer {
       return busy;
     }
 
-    const existing = await this.registry.getBylineForKey(signed.public_key);
+    let existing: string | null;
+    try {
+      existing = await this.read((r) => r.getBylineForKey(signed.public_key));
+    } catch {
+      return RPC_DOWN;
+    }
     if (existing) return { status: 200, body: { code: existing, account_id: this.registry.agentAccountId(existing), existing: true } };
 
     // One sponsored registration in flight at a time, across every instance. The registry keeps a small
@@ -271,7 +303,12 @@ export class Relayer {
     } catch {
       return busy;
     }
-    const sponsor = await this.registry.getSponsorStatus();
+    let sponsor: { used: number; limit: number };
+    try {
+      sponsor = await this.read((r) => r.getSponsorStatus());
+    } catch {
+      return RPC_DOWN;
+    }
     if (sponsor.used >= sponsor.limit) return { status: 429, body: { error: "Sponsored onboarding is full", sponsored: sponsor } };
     // Only requests that will really be submitted count toward the per-address and hourly caps, so
     // replays, duplicates and "full" answers can't use them up for honest agents.
@@ -286,15 +323,57 @@ export class Relayer {
       return busy;
     }
 
+    const done = (code: string, txHash: string): RelayResult => ({
+      status: 200,
+      body: { code, account_id: this.registry.agentAccountId(code), tx_hash: txHash, existing: false },
+    });
     let txHash = "";
-    try {
-      txHash = await this.registry.registerSigned(signed);
-    } catch (e) {
-      return { status: 400, body: { error: `The registry refused it: ${(e as Error).message ?? e}` } };
+    let sent = false;
+    for (const route of [this.registry, this.fallback]) {
+      if (!route) continue;
+      try {
+        txHash = await route.registerSigned(signed);
+        sent = true;
+        break;
+      } catch (e) {
+        console.error(`[relayer] register_signed on ${this.registry.contractId}: ${errorText(e)}`);
+        // An RPC can fail while waiting for the result even though the transaction went through:
+        // ask the chain before calling it a failure, so a retry never registers a second byline.
+        const refused = refusedOnChain(e);
+        const landed = await this.findCode(signed.public_key, refused ? 0 : this.confirmWaitMs);
+        if (landed) return done(landed, "");
+        if (refused) return { status: 400, body: { error: `The registry refused it: ${errorText(e)}` } };
+      }
     }
-    const code = await this.registry.getBylineForKey(signed.public_key);
+    if (!sent) {
+      return {
+        status: 502,
+        body: { error: "The NEAR RPC failed while sending the registration and nothing was registered; try again in a minute" },
+      };
+    }
+    const code = await this.findCode(signed.public_key);
     if (!code) return { status: 502, body: { error: "Submitted, but the agent account wasn't created; nothing was charged to you", tx_hash: txHash } };
-    return { status: 200, body: { code, account_id: this.registry.agentAccountId(code), tx_hash: txHash, existing: false } };
+    return done(code, txHash);
+  }
+
+  /** A read on the main RPC, then on the fallback if the first one throws. */
+  private async read<T>(fn: (r: Registry) => Promise<T>): Promise<T> {
+    try {
+      return await fn(this.registry);
+    } catch (e) {
+      if (!this.fallback) throw e;
+      return await fn(this.fallback);
+    }
+  }
+
+  /** The byline the chain holds for this key, looking for up to `confirmWaitMs` (a send may still be landing). */
+  private async findCode(publicKey: string, waitMs = this.confirmWaitMs): Promise<string | null> {
+    const until = Date.now() + waitMs;
+    for (;;) {
+      const code = await this.read((r) => r.getBylineForKey(publicKey)).catch(() => null);
+      if (code || Date.now() >= until) return code;
+      await new Promise((r) => setTimeout(r, 2_000));
+    }
   }
 
 }

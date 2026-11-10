@@ -10,6 +10,9 @@
 import { Relayer, memoryRateStore, upstashRateStore, type RateStore } from "@by-line/sdk/relay";
 import type { NetworkId } from "@by-line/sdk";
 
+/** A slow RPC is retried and then checked on-chain before answering (see Relayer.submit). */
+export const maxDuration = 120;
+
 const relayers: Partial<Record<NetworkId, Relayer>> = {};
 /**
  * The network a request is for when it doesn't say: picked by the address it came in on, like the site.
