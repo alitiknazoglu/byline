@@ -81,7 +81,7 @@ export function Table<R>({ cols, rows, empty }: { cols: Col<R>[]; rows: R[]; emp
           {rows.map((r, i) => (
             <tr key={i}>
               {cols.map((c) => (
-                <td key={c.head} className={c.right ? "r" : undefined}>
+                <td key={c.head} className={c.right ? "r" : undefined} data-label={c.head}>
                   {c.cell(r)}
                 </td>
               ))}

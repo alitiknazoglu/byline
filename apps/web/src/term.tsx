@@ -484,6 +484,8 @@ export function Terminal() {
         <main
           className="screen"
           onClick={() => {
+            // On a phone a tap shouldn't pop the keyboard up while you're reading or scrolling.
+            if (window.matchMedia("(pointer: coarse)").matches) return;
             if (!window.getSelection()?.toString())
               inputRef.current?.focus({ preventScroll: true });
           }}

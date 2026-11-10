@@ -301,8 +301,33 @@ b { font-weight: 700; color: var(--hi); }
   .nav::-webkit-scrollbar { display: none; }
   .navlink { padding: 4px 4px; font-size: 12px; flex: none; }
   .wallet { margin-left: 2px; }
-  .chips { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
-  .chip { flex: none; }
+  /* Quick buttons wrap onto a second line instead of running off the screen. */
+  .chips { gap: 6px; }
+  .chip { padding: 5px 10px; }
+
+  /* Tables become one card per row: each cell on its own line, labelled with its column name,
+     so nothing is cut off at the right edge. */
+  .tbl-wrap { overflow-x: visible; }
+  .tbl, .tbl tbody, .tbl tr { display: block; width: 100%; }
+  .tbl thead { display: none; }
+  .tbl tr { padding: 7px 0; border-bottom: 1px solid var(--rule); }
+  .tbl tr:first-child { padding-top: 2px; }
+  .tbl td {
+    display: grid;
+    grid-template-columns: 15ch minmax(0, 1fr);
+    column-gap: 1ch;
+    padding: 0;
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: left;
+  }
+  .tbl td::before { content: attr(data-label); color: var(--dim); }
+  .tbl td[data-label=""] { grid-template-columns: minmax(0, 1fr); }
+  .tbl td[data-label=""]::before { display: none; }
+  .tbl .r { text-align: left; }
+
+  /* Long JSON and code lines wrap instead of hiding past the edge. */
+  .json, .snippet { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
 }
 
 /* verify checklist */
