@@ -12,6 +12,8 @@ import {
   COMMAND_NAMES,
   COMMANDS,
   DEMO_CODE,
+  isNetworkError,
+  networkErrorText,
   REGISTRY,
   parse,
 } from "./commands";
@@ -315,7 +317,9 @@ export function Terminal() {
     } catch (e) {
       const msg = registryMissing(e)
         ? `the ${NETWORK} registry (${REGISTRY_ID}) isn't deployed yet${IS_MAINNET ? `; try it on testnet: ${OTHER_SITE}` : ""}`
-        : ((e as Error)?.message ?? String(e));
+        : isNetworkError(e)
+          ? networkErrorText()
+          : ((e as Error)?.message ?? String(e));
       patch(id, { pending: undefined, out: <Err>{msg}</Err> });
     } finally {
       setBusy(false);

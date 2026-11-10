@@ -65,6 +65,12 @@ export function parse(line: string): { name: string; args: string[]; flags: Reco
 
 const str = (v: string | true | undefined) => (typeof v === "string" ? v : undefined);
 
+/** The browser's own wording when a request never got an answer (Chrome, Safari, Firefox). */
+export const isNetworkError = (e: unknown) =>
+  e instanceof TypeError && /failed to fetch|load failed|networkerror|network request failed/i.test(e.message);
+export const networkErrorText = (host?: string) =>
+  `couldn't reach ${host ?? "the network"} from this browser. Try again; if it keeps failing, pause an ad or privacy blocker (or VPN) for this site`;
+
 async function snapshot(room: Room): Promise<Snapshot> {
   const s = await loadSnapshot(room);
   if (!s) throw new Error(room === "mainnet" ? "mainnet isn't live yet: the registry opens at byline.near" : `no ${room} snapshot found yet`);
@@ -165,7 +171,22 @@ function checklist(live: (node: ReactNode) => void, title: ReactNode) {
     async step<T>(i: number, check: () => Promise<T>, result: (v: T) => Pick<Step, "state" | "detail">): Promise<T> {
       steps[i] = { ...steps[i]!, state: "run" };
       show();
-      const [v] = await Promise.all([check(), pause(380)]);
+      const once = () => check().catch(async (e) => {
+        if (!isNetworkError(e)) throw e;
+        await pause(1200); // one retry: most of these are a brief network blip
+        return check();
+      });
+      const [v] = await Promise.all([
+        once().catch((e) => {
+          if (isNetworkError(e)) {
+            steps[i] = { ...steps[i]!, state: "fail", detail: `couldn't reach ${steps[i]!.via.split(" ")[0]}` };
+            show();
+            throw new Error(networkErrorText(steps[i]!.via.split(" ")[0]));
+          }
+          throw e;
+        }),
+        pause(380),
+      ]);
       steps[i] = { ...steps[i]!, ...result(v) };
       show();
       return v;
@@ -459,7 +480,7 @@ export const COMMANDS: Record<string, Command> = {
 
       if (isTx) {
         run.define([
-          ["transaction", "tx.test.fastnear.com"],
+          ["transaction", `tx.${NETWORK === "mainnet" ? "main" : "test"}.fastnear.com`],
           ["outcome", "receipts"],
           ["signer", `${REGISTRY} · get_byline_for_account`],
           ["memo", "ft_transfer args"],
