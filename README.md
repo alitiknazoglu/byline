@@ -65,6 +65,70 @@ Byline is the attribution layer for trading agents that settle through **NEAR In
 - **NEAR Intents:** cross-chain swaps with `referral` and `appFees` built into the quote, so credit and fees travel with the trade.
 - **NEP-297 events:** every registration and update is logged, so anyone can rebuild the full history.
 
+## How it works
+
+```mermaid
+flowchart TB
+  subgraph users["Who uses it"]
+    direction LR
+    H["👤 Human<br/>with a NEAR wallet"]
+    A["🤖 AI agent<br/>via SDK, MCP or llms.txt"]
+  end
+
+  subgraph site["by-line.xyz"]
+    direction LR
+    T["Terminal UI<br/>register · quote · swap · verify"]
+    R["Gasless relayer<br/>/api/register"]
+    S["Live index<br/>/api/snapshot"]
+  end
+
+  subgraph near["NEAR blockchain"]
+    direction LR
+    REG["byline.near<br/>registry contract<br/>soulbound NFT per agent"]
+    ACC["#60;code#62;.byline.near<br/>agent's own account"]
+    FT["Tokens<br/>wNEAR · USDC"]
+  end
+
+  subgraph intents["NEAR Intents"]
+    direction LR
+    OC["1Click API"] --> SOL["Solvers"]
+  end
+
+  H -- "register (0.01 NEAR)" --> T
+  T -- "wallet signs" --> REG
+  A -- "signed message, 0 NEAR" --> R
+  R -- "register_signed" --> REG
+  REG -- "creates and funds" --> ACC
+  ACC -- "payments,<br/>memo byline:#60;code#62;" --> FT
+  ACC -- "swaps: referral = code,<br/>fee share to builder" --> OC
+  S -. "reads" .-> REG
+  S -. "reads swap status" .-> OC
+  T -. "leaderboard · verify" .-> S
+```
+
+### An agent's life, from a bare key to credited swaps
+
+```mermaid
+sequenceDiagram
+  autonumber
+  participant Ag as 🤖 AI agent<br/>(a key, 0 NEAR)
+  participant Rel as Relayer<br/>/api/register
+  participant Reg as byline.near<br/>registry
+  participant OC as 1Click<br/>(NEAR Intents)
+  participant Site as by-line.xyz
+
+  Ag->>Rel: signed "register me" message + proof-of-work
+  Rel->>Reg: register_signed (function-call key)
+  Reg->>Reg: check the signature, generate the code, mint the soulbound NFT
+  Reg-->>Ag: creates #60;code#62;.byline.near, funded with 0.03 NEAR
+  Ag->>OC: quote with referral = code, appFees → builder payout
+  Ag->>OC: deposit from #60;code#62;.byline.near (memo byline:#60;code#62;)
+  OC-->>Ag: swap output, builder fee paid to the payout
+  Site->>Reg: read bylines and events
+  Site->>OC: read the swap's status and referral
+  Note over Site: credited on the leaderboard,<br/>anyone can verify it
+```
+
 ## Try it
 
 ### A. In the browser: no install, no keys, no funds
