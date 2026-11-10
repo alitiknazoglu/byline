@@ -620,7 +620,7 @@ export const COMMANDS: Record<string, Command> = {
           </Line>
         );
       }
-      const [amount = "0.01", fromArg = "NEAR", toArg = fromArg.toUpperCase() === "USDC" ? "NEAR" : "USDC"] = args;
+      const [amount = "0.4", fromArg = "NEAR", toArg = fromArg.toUpperCase() === "USDC" ? "NEAR" : "USDC"] = args;
       const side = (t: string) => (/^w?near$/i.test(t) ? "NEAR" : /^usdc$/i.test(t) ? "USDC" : null);
       const from = side(fromArg);
       const to = side(toArg);
@@ -670,6 +670,9 @@ export const COMMANDS: Record<string, Command> = {
             />
             <Line>
               To swap, run <Cmd>{again}</Cmd> and approve in your wallet. If no solver fills it, 1Click refunds you.
+            </Line>
+            <Line tone="dim">
+              another amount: <Cmd>{`swap 1 ${from} ${to}`}</Cmd> · the other way: <Cmd>{`swap ${from === "NEAR" ? "1" : "0.4"} ${to} ${from}`}</Cmd>
             </Line>
           </>
         );

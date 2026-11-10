@@ -49,6 +49,11 @@ interface RunOpts {
   boot?: boolean;
 }
 
+/** Quick buttons that fill the prompt (with the amount selected) instead of running right away. */
+const CHIP_DRAFTS: Record<string, { line: string; select: [number, number] }> = {
+  swap: { line: "swap 0.4 NEAR USDC", select: [5, 8] },
+};
+
 /** The quick buttons under the prompt; disconnect appears before help while a wallet is connected. */
 const suggestions = (connected: boolean) => [
   "quote",
@@ -179,6 +184,8 @@ export function Terminal() {
   const [indexedAt, setIndexedAt] = useState<string | null>(null);
   const nextId = useRef(1);
   const inputRef = useRef<HTMLInputElement>(null);
+  /** A selection to apply once a chip's draft line is in the input (see CHIP_DRAFTS). */
+  const pendingSelect = useRef<[number, number] | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const queue = useRef<Promise<void>>(Promise.resolve());
   const roomRef = useRef(room);
@@ -352,6 +359,16 @@ export function Terminal() {
   useEffect(() => {
     if (follow.current) endRef.current?.scrollIntoView({ block: "end" });
   }, [entries]);
+
+  // After a chip fills the prompt, select its amount so typing replaces it.
+  useEffect(() => {
+    const sel = pendingSelect.current;
+    const el = inputRef.current;
+    if (!sel || !el) return;
+    pendingSelect.current = null;
+    el.focus();
+    el.setSelectionRange(sel[0], sel[1]);
+  }, [input]);
 
   const completions = useMemo(() => {
     const [head, ...rest] = input.split(" ");
@@ -535,9 +552,14 @@ export function Terminal() {
                       key={s}
                       type="button"
                       className="chip"
-                      onClick={() =>
-                        completions.length && input ? setInput(`${s} `) : run(s)
-                      }
+                      onClick={() => {
+                        if (completions.length && input) return setInput(`${s} `);
+                        const draft = CHIP_DRAFTS[s];
+                        if (!draft) return run(s);
+                        // Commands that move money open as an editable line instead of running: the amount is selected, so typing replaces it.
+                        pendingSelect.current = draft.select;
+                        setInput(draft.line);
+                      }}
                     >
                       {s.length > 34 ? `${s.slice(0, 31)}…` : s}
                     </button>
