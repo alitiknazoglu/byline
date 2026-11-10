@@ -55,6 +55,7 @@ const suggestions = (connected: boolean) => [
   `show ${DEMO_CODE}`,
   ...(DEMO_TX ? [`verify ${DEMO_TX}`] : []),
   "pay",
+  ...(IS_MAINNET ? ["swap"] : []),
   "register",
   "mcp",
   ...(connected ? ["disconnect"] : []),

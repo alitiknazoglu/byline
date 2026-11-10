@@ -1,7 +1,7 @@
 /** Every command the terminal understands. Each returns what it prints. */
 import type { ReactNode } from "react";
 import { Near, generateKey, isValidAccountId } from "near-kit";
-import { Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@by-line/sdk";
+import { assertQuoteMatches, Byline, DEFAULT_FEE_BPS, isValidCode, MAX_FEE_BPS, OneClick, OneClickError, Registry } from "@by-line/sdk";
 import { FastNear, parseMemoTransfers, parseTx } from "@by-line/sdk/chain";
 import { accountUrl, ago, count, dateTime, formatAmount, loadSnapshot, short, tokenSymbol, txUrl, usd, type Detail, type Room, type Row, type Snapshot } from "./data";
 import { Cmd, Code, CodeRef, Err, Ext, Gap, Head, Json, KV, Line, Ok, Table, Trace, Warn, type Col, type Step } from "./ui";
@@ -35,6 +35,10 @@ const readRegistry = new Registry({ network: NETWORK });
 const readNear = new Near({ network: NETWORK });
 const fastnear = new FastNear();
 const oneClick = new OneClick();
+
+/** Caps for swaps from the site: small, demo-sized amounts only. */
+const SWAP_MAX = { NEAR: 1, USDC: 5 } as const;
+const SWAP_MAX_USD = 5;
 
 /** Splits a command line into words, honouring quotes, and pulls out --flags. */
 export function parse(line: string): { name: string; args: string[]; flags: Record<string, string | true> } {
@@ -602,6 +606,204 @@ export const COMMANDS: Record<string, Command> = {
           <Line tone="dim">verifying it on-chain next…</Line>
         </>
       );
+    },
+  },
+
+  swap: {
+    usage: "swap <amount> NEAR USDC | swap <amount> USDC NEAR [--code CODE] [--yes]",
+    summary: "a real mainnet swap through NEAR Intents from your wallet, credited to a byline (preview first)",
+    run: async ({ args, flags, wallet, status, live, then }) => {
+      if (!IS_MAINNET) {
+        return (
+          <Line>
+            Swaps settle on NEAR mainnet only. Run it at <Ext href={OTHER_SITE}>{OTHER_SITE.replace(/^https?:\/\//, "")}</Ext>, or try <Cmd>quote</Cmd> here.
+          </Line>
+        );
+      }
+      const [amount = "0.01", fromArg = "NEAR", toArg = fromArg.toUpperCase() === "USDC" ? "NEAR" : "USDC"] = args;
+      const side = (t: string) => (/^w?near$/i.test(t) ? "NEAR" : /^usdc$/i.test(t) ? "USDC" : null);
+      const from = side(fromArg);
+      const to = side(toArg);
+      if (!from || !to || from === to) throw new Error("swap <amount> NEAR USDC, or swap <amount> USDC NEAR");
+      const max = SWAP_MAX[from];
+      if (!/^\d+(\.\d{1,6})?$/.test(amount) || Number(amount) <= 0 || Number(amount) > max) throw new Error(`amount takes 0.000001 to ${max} ${from} here`);
+      const fromSym = from === "NEAR" ? "wNEAR" : "USDC";
+      const toSym = to === "NEAR" ? "wNEAR" : "USDC";
+
+      if (!wallet.accountId || !wallet.near) {
+        return (
+          <>
+            <Line>
+              Swaps {amount} {from} to {to} from your wallet through NEAR Intents (1Click), credited to a byline: its code rides on the swap as the referral, and its builder earns a fee share.
+            </Line>
+            <Line>
+              <Cmd>connect</Cmd> a mainnet wallet, then run <Cmd>{`swap ${amount} ${from} ${to}`}</Cmd> again · or <Cmd>{`quote ${amount} ${fromSym} ${toSym}`}</Cmd> for a dry look
+            </Line>
+          </>
+        );
+      }
+      const sender = wallet.accountId;
+      const mine = await readRegistry.getBylinesForOwner(sender).catch(() => []);
+      const code = str(flags.code) ?? mine[0]?.code ?? DEMO_CODE;
+      if (!isValidCode(code)) throw new Error(`"${code}" isn't a byline code (8 characters, like ${DEMO_CODE})`);
+      const byline = new Byline({ code, network: NETWORK, oneClick });
+      const input = { from: fromSym, to: toSym, amount, recipient: sender, refundTo: sender };
+
+      // Real money: a dry quote first, and nothing moves without an explicit --yes.
+      if (!flags.yes) {
+        status(`asking 1Click for ${amount} ${from} → ${to}…`);
+        const q = await byline.quote(input);
+        const again = ["swap", amount, from, to, ...(flags.code ? ["--code", code] : []), "--yes"].join(" ");
+        return (
+          <>
+            <Warn>this is a real swap on mainnet</Warn>
+            <KV
+              rows={[
+                ["from", `${sender} (your wallet)`],
+                ["you send", `${amount} ${from}${from === "NEAR" ? ", wrapped to wNEAR first" : ""}`],
+                ["you get about", `${q.response.quote.amountOutFormatted.replace(/(\.\d{6})\d+/, "$1")} ${toSym}${to === "NEAR" ? " (run unwrap after, to turn it into NEAR)" : ""}`],
+                ["worth", `$${Number(q.response.quote.amountInUsd ?? 0).toFixed(2)}`],
+                ["credited to", <CodeRef code={code} />],
+                ["builder earns", q.builderFeeBps ? `${q.builderFeeBps} bps` : "no fee yet (referral only)"],
+                ["plus", "token storage for new holders (0.00125 NEAR each) and gas"],
+              ]}
+            />
+            <Line>
+              To swap, run <Cmd>{again}</Cmd> and approve in your wallet. If no solver fills it, 1Click refunds you.
+            </Line>
+          </>
+        );
+      }
+
+      const [origin, destination] = await Promise.all([oneClick.token(fromSym, "near"), oneClick.token(toSym, "near")]);
+      const originToken = origin.assetId.replace(/^nep141:/, "");
+      const destToken = destination.assetId.replace(/^nep141:/, "");
+
+      // 1. You can only receive a token you're registered for. Register first, in its own approval if needed.
+      if (!(await readNear.view(destToken, "storage_balance_of", { account_id: sender }))) {
+        status(`approve in your wallet: register ${sender} for ${toSym} (0.00125 NEAR, once)…`);
+        await wallet.near
+          .transaction(sender)
+          .functionCall(destToken, "storage_deposit", { account_id: sender, registration_only: true }, { gas: "10 Tgas", attachedDeposit: "0.00125 NEAR" })
+          .send({ waitUntil: "FINAL" });
+      }
+
+      // 2. A live quote: 1Click answers with a fresh deposit address for this swap.
+      status("getting a live quote from 1Click…");
+      const q = await byline.quote(input, { live: true });
+      const depositAddress = q.response.quote.depositAddress;
+      if (!depositAddress) throw new Error("1Click returned no deposit address; nothing was sent");
+      assertQuoteMatches(q.request, q.response);
+      const usdIn = Number(q.response.quote.amountInUsd);
+      if (!Number.isFinite(usdIn) || usdIn > SWAP_MAX_USD) throw new Error(`this swap is worth ${Number.isFinite(usdIn) ? "$" + usdIn.toFixed(2) : "an unknown amount"}, over the $${SWAP_MAX_USD} cap here; nothing was sent`);
+      const amountIn = q.response.quote.amountIn;
+
+      if (from === "USDC") {
+        const bal = (await readNear.view(originToken, "ft_balance_of", { account_id: sender })) as string;
+        if (BigInt(bal ?? "0") < BigInt(amountIn)) throw new Error(`your wallet holds ${formatAmount(bal ?? "0", originToken)}, less than ${amount} USDC; nothing was sent`);
+      }
+
+      // 3. One transaction to the origin token: register where needed, wrap NEAR if that's the input,
+      //    and deposit to 1Click's address with the byline memo.
+      const [senderReg, depositReg] = await Promise.all([
+        from === "NEAR" ? readNear.view(originToken, "storage_balance_of", { account_id: sender }) : Promise.resolve(true),
+        readNear.view(originToken, "storage_balance_of", { account_id: depositAddress }),
+      ]);
+      let tx = wallet.near.transaction(sender);
+      if (!senderReg) tx = tx.functionCall(originToken, "storage_deposit", { account_id: sender, registration_only: true }, { gas: "10 Tgas", attachedDeposit: "0.00125 NEAR" });
+      if (!depositReg) tx = tx.functionCall(originToken, "storage_deposit", { account_id: depositAddress, registration_only: true }, { gas: "10 Tgas", attachedDeposit: "0.00125 NEAR" });
+      if (from === "NEAR") tx = tx.functionCall(originToken, "near_deposit", {}, { gas: "10 Tgas", attachedDeposit: BigInt(amountIn) });
+      tx = tx.functionCall(originToken, "ft_transfer", { receiver_id: depositAddress, amount: amountIn, memo: `byline:${code}` }, { gas: "15 Tgas", attachedDeposit: "1 yocto" });
+      status(`approve in your wallet: ${amount} ${from} → 1Click, credited to ${code}…`);
+      const outcome = (await tx.send({ waitUntil: "FINAL" })) as { transaction_outcome?: { id?: string }; transaction?: { hash?: string } };
+      const hash = outcome.transaction_outcome?.id ?? outcome.transaction?.hash;
+      if (!hash) throw new Error("the wallet didn't return a transaction hash; check your wallet's activity");
+      await oneClick.submitDeposit({ txHash: hash, depositAddress, nearSenderAccount: sender }).catch(() => {
+        /* optional: 1Click also finds the deposit on its own */
+      });
+
+      // 4. Follow the swap for a couple of minutes; it keeps going on 1Click's side either way.
+      const sent = (
+        <>
+          <Ok>
+            sent {amount} {from} to 1Click, credited to <CodeRef code={code} />
+          </Ok>
+          <KV
+            rows={[
+              ["deposit tx", <Ext href={txUrl(NETWORK, hash)}>{hash}</Ext>],
+              ["swap", <Ext href={`https://explorer.near-intents.org/transactions/${depositAddress}`}>{short(depositAddress, 10, 8)}</Ext>],
+            ]}
+          />
+        </>
+      );
+      let last = "PENDING_DEPOSIT";
+      const final = await oneClick
+        .waitForStatus(depositAddress, {
+          timeoutMs: 3 * 60_000,
+          intervalMs: 4_000,
+          onUpdate: (st) => {
+            last = st.status;
+            live(
+              <>
+                {sent}
+                <Line tone="dim">1Click: {st.status.toLowerCase().replace(/_/g, " ")}…</Line>
+              </>,
+            );
+          },
+        })
+        .catch(() => null);
+      if (final?.status === "SUCCESS") {
+        then(`verify ${depositAddress}`);
+        return (
+          <>
+            {sent}
+            <Ok>
+              swapped: you got {final.quoteResponse?.quote.amountOutFormatted ?? q.response.quote.amountOutFormatted} {toSym}
+            </Ok>
+            {to === "NEAR" && (
+              <Line tone="dim">
+                it arrives as wNEAR · <Cmd>unwrap</Cmd> turns it into NEAR
+              </Line>
+            )}
+          </>
+        );
+      }
+      return (
+        <>
+          {sent}
+          <Line>
+            1Click status: <span className="t-code">{(final?.status ?? last).toLowerCase().replace(/_/g, " ")}</span>
+            {final ? "" : " (still going; it settles on its own, or refunds you)"}
+          </Line>
+          <Line tone="dim">
+            check it any time: <Cmd>{`verify ${depositAddress}`}</Cmd>
+          </Line>
+        </>
+      );
+    },
+  },
+
+  unwrap: {
+    usage: "unwrap [amount]",
+    summary: "turn the wNEAR in your wallet back into NEAR (all of it by default)",
+    run: async ({ args, wallet, status }) => {
+      if (!wallet.accountId || !wallet.near) return <Line tone="dim">connect a wallet first · <Cmd>connect</Cmd></Line>;
+      const sender = wallet.accountId;
+      const bal = BigInt(((await readNear.view(WRAP, "ft_balance_of", { account_id: sender })) as string | null) ?? "0");
+      if (bal === 0n) return <Line tone="dim">no wNEAR in {sender}</Line>;
+      let raw = bal;
+      if (args[0]) {
+        if (!/^\d+(\.\d{1,24})?$/.test(args[0])) throw new Error("unwrap [amount], e.g. unwrap 0.01");
+        const [w, f = ""] = args[0].split(".");
+        raw = BigInt(w!) * 10n ** 24n + BigInt(f.padEnd(24, "0") || "0");
+        if (raw === 0n || raw > bal) throw new Error(`you hold ${formatAmount(bal.toString(), WRAP, 6)}`);
+      }
+      status(`approve in your wallet: unwrap ${formatAmount(raw.toString(), WRAP, 6)}…`);
+      await wallet.near
+        .transaction(sender)
+        .functionCall(WRAP, "near_withdraw", { amount: raw.toString() }, { gas: "10 Tgas", attachedDeposit: "1 yocto" })
+        .send({ waitUntil: "FINAL" });
+      return <Ok>unwrapped {formatAmount(raw.toString(), WRAP, 6)} into NEAR</Ok>;
     },
   },
 
