@@ -42,7 +42,11 @@ const SWAP_MAX_USD = 5;
 
 /** Splits a command line into words, honouring quotes, and pulls out --flags. */
 export function parse(line: string): { name: string; args: string[]; flags: Record<string, string | true> } {
-  const words = [...line.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)].map((m) => m[1] ?? m[2] ?? m[3]!);
+  // People copy usage hints like "show <code>" with the brackets, so <8xk75x3s> and [0.4] read as 8xk75x3s and 0.4.
+  const words = [...line.matchAll(/"([^"]*)"|'([^']*)'|(\S+)/g)]
+    .map((m) => m[1] ?? m[2] ?? m[3]!)
+    .map((w) => w.replace(/^[<[]+|[>\]]+$/g, ""))
+    .filter((w) => w !== "");
   const [name = "", ...rest] = words;
   const args: string[] = [];
   const flags: Record<string, string | true> = {};
@@ -325,9 +329,14 @@ export const COMMANDS: Record<string, Command> = {
     usage: "show <code>",
     summary: "one byline: accounts, credits, swaps, payments, history",
     run: async ({ args, room }) => {
-      const code = args[0] ?? DEMO_CODE;
+      const code = (args[0] ?? DEMO_CODE).toLowerCase();
       const found = await findDetail(code, room);
-      if (!found) throw new Error(`no byline ${code} in the snapshots. Codes look like ${DEMO_CODE}; try top`);
+      if (!found)
+        throw new Error(
+          isValidCode(code)
+            ? `no byline ${code} in the snapshots yet. A new byline shows up within ~2 minutes; try again, or top`
+            : `no byline ${code}. Codes are 8 letters and digits, like ${DEMO_CODE}; try top`,
+        );
       const { d, snap } = found;
       const b = d.byline;
       const net = snap.network;
