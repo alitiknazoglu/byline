@@ -1008,15 +1008,15 @@ export const COMMANDS: Record<string, Command> = {
     usage: "account <code> [--create] [--download]",
     summary: `create <code>.${REGISTRY} for a byline you registered (saves its key first, then creates)`,
     run: async ({ wallet, args, flags, status }) => {
-      const code = args[0];
+      const code = args[0]?.toLowerCase();
       if (!code || !isValidCode(code)) throw new Error("account <code> (one of yours: whoami)");
       if (!wallet.accountId || !wallet.near) throw new Error("connect a wallet first: connect");
       const accountId = agentAccount(code);
       const pending = pendingKeys.get(code);
 
-      // Step 2: only once the key file is saved does any money move.
-      if (flags.create) {
-        if (!pending) throw new Error(`no saved key for ${code} in this tab yet: run account ${code} first`);
+      // Step 2: only once the key file is saved does any money move. `--create` before the key exists
+      // runs step 1 instead, so nobody gets stuck on the order.
+      if (flags.create && pending) {
         status(`approve create_account in your wallet (0.05 NEAR funds ${accountId})…`);
         await new Registry({ network: NETWORK, near: wallet.near, signerId: wallet.accountId }).createAccount(code, pending.publicKey.toString(), "0.05 NEAR");
         pendingKeys.delete(code);
@@ -1042,6 +1042,7 @@ export const COMMANDS: Record<string, Command> = {
       downloadKey(accountId, key);
       return (
         <>
+          {flags.create && !pending && <Line tone="dim">step 1 of 2 first: the account's key, so you hold it before any NEAR moves</Line>}
           <Ok>key for {accountId} downloaded as {accountId}.json (never shown here)</Ok>
           <Line>
             Check the file is in your Downloads, then run <Cmd>{`account ${code} --create`}</Cmd> to create and fund the account (0.05 NEAR).
