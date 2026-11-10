@@ -727,10 +727,16 @@ export const COMMANDS: Record<string, Command> = {
       const registry = new Registry({ network: NETWORK, near: wallet.near, signerId: wallet.accountId });
       const before = new Set((await readRegistry.getBylinesForOwner(wallet.accountId)).map((b) => b.code));
       status("approve the registration in your wallet (0.01 NEAR covers storage, the rest comes back)…");
-      await registry.register({ ...(title ? { title } : {}), ...(str(flags.payout) ? { payout: str(flags.payout) } : {}), fee_bps: fee });
-      const after = await readRegistry.getBylinesForOwner(wallet.accountId);
-      const created = after.find((b) => !before.has(b.code));
-      if (!created) throw new Error("the transaction went through but no new byline showed up yet; run whoami in a moment");
+      const result = await registry.register({ ...(title ? { title } : {}), ...(str(flags.payout) ? { payout: str(flags.payout) } : {}), fee_bps: fee });
+      // The contract returns the new byline. Some wallets don't pass the return value back, and the chain
+      // takes a couple of seconds to finalize, so fall back to reading the registry until it shows up.
+      let created = result && typeof result === "object" && typeof result.code === "string" && !before.has(result.code) ? result : undefined;
+      for (let i = 0; !created && i < 10; i++) {
+        status("registered · waiting for the chain to confirm it…");
+        await new Promise((r) => setTimeout(r, 1500));
+        created = (await readRegistry.getBylinesForOwner(wallet.accountId)).find((b) => !before.has(b.code));
+      }
+      if (!created) throw new Error("the transaction went through but the new byline isn't readable yet; run whoami in a moment");
       return (
         <>
           <Ok>
