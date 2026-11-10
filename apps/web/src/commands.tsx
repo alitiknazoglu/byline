@@ -562,6 +562,16 @@ export const COMMANDS: Record<string, Command> = {
       const newestFirst = [...mine].sort((a, b) => b.created_at_ms - a.created_at_ms);
       const payable = (b: (typeof mine)[number]) => [b.account, ...b.linked].some((a) => a && a !== wallet.accountId);
       const picked = flags.code ? null : (newestFirst.find(payable) ?? null);
+      // A byline this tab started giving an account (key saved, account not created yet) is what the user
+      // means to pay: point at the missing step instead of quietly paying an older one.
+      const unfinished = flags.code ? undefined : newestFirst.find((b) => !payable(b) && pendingKeys.has(b.code));
+      if (unfinished && (!picked || unfinished.created_at_ms > picked.created_at_ms)) {
+        throw new Error(
+          `${unfinished.code}'s account isn't created yet: its key is saved (step 1 of 2). ` +
+            `Run account ${unfinished.code} --create and approve in your wallet, then pay again` +
+            (picked ? `. Or pay ${picked.code} now: pay --code ${picked.code}` : ""),
+        );
+      }
       const code = (str(flags.code) ?? picked?.code ?? DEMO_CODE).toLowerCase();
       if (!isValidCode(code)) throw new Error(`"${code}" isn't a byline code (8 characters, like ${DEMO_CODE})`);
       const amount = str(flags.amount) ?? "0.01";
@@ -1043,9 +1053,10 @@ export const COMMANDS: Record<string, Command> = {
       return (
         <>
           {flags.create && !pending && <Line tone="dim">step 1 of 2 first: the account's key, so you hold it before any NEAR moves</Line>}
-          <Ok>key for {accountId} downloaded as {accountId}.json (never shown here)</Ok>
+          <Ok>step 1 of 2 done: key for {accountId} downloaded as {accountId}.json (never shown here)</Ok>
+          <Warn>the account doesn't exist yet</Warn>
           <Line>
-            Check the file is in your Downloads, then run <Cmd>{`account ${code} --create`}</Cmd> to create and fund the account (0.05 NEAR).
+            Step 2: check the file is in your Downloads, then run <Cmd>{`account ${code} --create`}</Cmd> and approve in your wallet. It creates and funds {accountId} (0.05 NEAR).
           </Line>
           <Line tone="dim">
             Didn't get the file? <Cmd>{`account ${code} --download`}</Cmd> saves the same key again.
